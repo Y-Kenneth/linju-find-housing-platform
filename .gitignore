@@ -37,3 +37,9 @@ src/main/resources/application.properties
 
 ### Claude Code local config ###
 .claude/
+
+### Documents — only markdown docs are pushed ###
+Documents/LinjuFind_Development_Reference.md
+Documents/*.docx
+Documents/*.pdf
+Documents/*.txt

@@ -1,17 +1,4 @@
 # Linju Find — Project Background
-*Who made this, why, and what it is trying to solve.*
-
----
-
-## Who Made This
-
-**Yakhe Kenneth Sugiharto (葛嘉诚)**
-Student ID: L25020009 | Class: IT-1
-Nanjing Xiaozhuang University (南京晓庄学院)
-Course: J2EE-Based Framework for Enterprise
-Year: 2026
-
-This project also serves the **Java Design Pattern** course simultaneously — both lecturers confirmed the same project can be submitted for both courses.
 
 ---
 
@@ -42,18 +29,6 @@ Most Chinese housing platforms (Anjuke 安居客, Lianjia 链家) are:
 - Offering zero honest, community-sourced information about what it actually feels like to live somewhere
 
 International students face an additional layer of difficulty — language barriers, unfamiliarity with local systems, no local connections. Many end up finding housing through informal WeChat groups or by relying on whoever helps them when they first arrive.
-
----
-
-## Personal Motivation
-
-This project was inspired by Kenneth's own personal experience.
-
-As an **Indonesian international student living in Nanjing**, he experienced firsthand how difficult it is for foreigners to find reliable housing information without local connections or language support.
-
-When he visited **Shenzhen**, he saw fully built apartment buildings and commercial areas standing almost completely empty — a visible reminder of how real the crisis is.
-
-That personal experience is what gave this project its direction and purpose.
 
 ---
 
@@ -122,14 +97,18 @@ This project demonstrates the full J2EE technology stack studied throughout the 
 - JdbcTemplate for database access (no ORM)
 - MySQL database design
 
-It also explicitly implements **6 GoF Design Patterns** across all 3 categories (Creational, Structural, Behavioral) for the Java Design Pattern course:
+It also explicitly implements **10 GoF Design Patterns** across all 3 categories (Creational, Structural, Behavioral) for the Java Design Pattern course:
 
 | Pattern | Category |
 |---|---|
 | Singleton | Creational |
+| Factory | Creational |
 | Builder | Creational |
 | Facade | Structural |
 | Decorator | Structural |
+| Composite | Structural |
+| Observer | Behavioral |
+| Command | Behavioral |
 | Strategy | Behavioral |
 | Template Method | Behavioral |
 
@@ -142,6 +121,5 @@ It also explicitly implements **6 GoF Design Patterns** across all 3 categories 
 | English name | **Linju Find** |
 | Chinese name | **邻居找房** |
 | Meaning | 邻居 = neighbor / community, 找房 = find housing |
-| Logo layout | "Linju Find" on top (smaller) · "邻居找房" below (slightly bigger) |
 
 The name reflects the core idea: finding housing through your community, not through advertisers.

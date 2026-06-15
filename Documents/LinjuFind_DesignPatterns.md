@@ -9,8 +9,7 @@
 src/main/java/com/linjufind/pattern/
 │
 ├── singleton/
-│   ├── AppConfig.java                     ← THE Singleton (hand-written, double-checked locking)
-│   └── DatabaseConfig.java                ← Spring @Bean wiring only (not the pattern itself)
+│   └── DatabaseManager.java               ← THE Singleton (hand-written, synchronized getInstance)
 │
 ├── factory/
 │   └── ReviewFactory.java                 ← Factory pattern
@@ -57,7 +56,7 @@ src/main/java/com/linjufind/pattern/
 
 | # | Pattern | Category | One-line purpose |
 |---|---|---|---|
-| 1 | Singleton | Creational | One shared `AppConfig` instance for the whole app |
+| 1 | Singleton | Creational | One shared `DatabaseManager` instance wraps the database connection pool |
 | 2 | Factory | Creational | `ReviewFactory` builds and validates `Review` objects |
 | 3 | Builder | Creational | `ListingBuilder` assembles a `Listing` field by field |
 | 4 | Facade | Structural | `ListingFacade` hides 3 DAO calls behind one method |
@@ -80,57 +79,66 @@ Every pattern entry has the same structure:
 
 ---
 
-## 1. Singleton — `AppConfig.java`
+## 1. Singleton — `DatabaseManager.java`
 **Category:** Creational
 
 ### What is it
 A class that can only ever have **one instance**. Everyone who needs it calls `getInstance()` and gets the same object.
 
 ### The problem without it
-`ListingController` has a constant `PAGE_SIZE = 6`. If you hardcode that in 3 different places and need to change it to 10, you have to remember to update all 3. If they use `new AppConfig()` instead, each call could return a different object with a different value — no consistency.
+Without a Singleton, every DAO could create its own database connection object. A database connection pool is an expensive resource — creating multiple instances wastes memory and can exhaust the connection pool under load. All DAOs should share one single managed instance.
 
 ### How it works in this project
 
 **Step 1 — Private constructor**
 ```java
-// AppConfig.java
-private AppConfig() {
-    this.defaultPageSize = 6;
-    this.appName = "Linju Find";
-    ...
+// DatabaseManager.java
+private DatabaseManager(DataSource dataSource) {
+    setupDatabaseConnection(dataSource);
 }
 ```
-Nobody outside the class can call `new AppConfig()`. The only way to get an instance is through `getInstance()`.
+Nobody outside the class can call `new DatabaseManager()`. The only way to get an instance is through `initialize()` or `getInstance()`.
 
-**Step 2 — Double-checked locking in `getInstance()`**
+**Step 2 — Synchronized `getInstance()`**
 ```java
-private static volatile AppConfig instance;
+private static DatabaseManager instance;
 
-public static AppConfig getInstance() {
-    if (instance == null) {                    // fast check — no lock
-        synchronized (AppConfig.class) {
-            if (instance == null) {            // safe check — inside lock
-                instance = new AppConfig();
-            }
-        }
+public static synchronized DatabaseManager initialize(DataSource dataSource) {
+    if (instance == null) {
+        instance = new DatabaseManager(dataSource);
     }
     return instance;
 }
-```
-- First `if`: avoids locking every time — if already created, just return it (fast).
-- `synchronized`: only one thread can enter this block at a time.
-- Second `if`: in case two threads both passed the first check at the same time.
-- `volatile`: forces the CPU to write the full object to memory before any other thread can read the reference.
 
-**Step 3 — Used in `ListingController`**
-```java
-private static final int PAGE_SIZE = AppConfig.getInstance().getDefaultPageSize();
+public static synchronized DatabaseManager getInstance() {
+    return instance;
+}
 ```
-Every time the listing browse page loads, `PAGE_SIZE` comes from the single shared `AppConfig`.
+`synchronized` ensures only one thread can create the instance at a time. `initialize()` is called once at startup by `DatabaseConfig`. After that, every DAO calls `getInstance()` to get the same object.
+
+**Step 3 — Wraps the database connection**
+```java
+private void setupDatabaseConnection(DataSource dataSource) {
+    this.connection = new JdbcTemplate(dataSource);
+}
+
+public JdbcTemplate getConnection() {
+    return connection;
+}
+```
+
+**Step 4 — Used in every DAO**
+```java
+// BaseDao.java
+public BaseDao(DatabaseManager databaseManager) {
+    this.jdbcTemplate = databaseManager.getConnection();
+}
+```
+Every DAO receives the single `DatabaseManager` instance and calls `getConnection()` to get the shared `JdbcTemplate`. The Singleton is explicitly visible in every DAO constructor.
 
 ### What your lecturer will ask
-- *"Why not just use a static variable?"* — Static variables don't give you lazy initialisation or thread safety. Singleton controls exactly when the object is created and guarantees it's created only once even under concurrent access.
-- *"What does `volatile` do?"* — Without `volatile`, one CPU core could see the reference as non-null before the object's fields are fully written in memory by another core. `volatile` prevents that.
+- *"Why not just let Spring inject JdbcTemplate directly?"* — Spring could handle this automatically, but then the Singleton pattern would be invisible in the code. Writing `DatabaseManager` manually makes the pattern explicit and traceable.
+- *"Why is `getInstance()` synchronized?"* — To prevent two threads from both reading `instance == null` at the same time and each creating a separate instance.
 
 ---
 
@@ -739,7 +747,7 @@ Admin opens /admin/users
 ### Creational (how objects are created)
 | Pattern | Simple summary |
 |---|---|
-| Singleton | Only one instance ever. `AppConfig.getInstance()` always returns the same object. |
+| Singleton | Only one instance ever. `DatabaseManager.getInstance()` always returns the same database connection wrapper. |
 | Factory | One static method creates and validates the object. `ReviewFactory.createReview()`. |
 | Builder | Build step by step with a readable chain. `new ListingBuilder().title(...).price(...).build()`. |
 
