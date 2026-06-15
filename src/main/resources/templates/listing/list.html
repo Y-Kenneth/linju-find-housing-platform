@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Browse Listings — Linju Find</title>
+    <link th:href="@{/css/style.css}" rel="stylesheet">
+    <style>
+        html, body { overflow: hidden; height: 100%; }
+
+        /* ── Root layout ── */
+        .listings-layout {
+            position: fixed;
+            top: var(--navbar-h);
+            left: 0; right: 0; bottom: 0;
+            display: flex;
+        }
+
+        /* ── LEFT sidebar ── */
+        .listings-sidebar {
+            width: 320px;
+            flex-shrink: 0;
+            height: 100%;
+            overflow-y: auto;
+            padding: 2.25rem 1.75rem 2rem 2rem;
+            background: rgba(8, 6, 4, 0.93);
+            border-right: 1px solid rgba(201,168,76,0.18);
+            scrollbar-width: none;
+            position: relative;
+            z-index: 2;
+        }
+        .listings-sidebar::-webkit-scrollbar { display: none; }
+        .listings-sidebar .lf-label { color: rgba(201,168,76,0.8); }
+        .listings-sidebar p { color: rgba(200,190,170,0.65); }
+        .listings-sidebar .lf-input,
+        .listings-sidebar .lf-select {
+            background: rgba(255,255,255,0.05);
+            border-color: rgba(201,168,76,0.18);
+            color: #f0ebe0;
+        }
+        .listings-sidebar .lf-input::placeholder { color: rgba(200,190,170,0.28); }
+        .listings-sidebar .lf-input:focus,
+        .listings-sidebar .lf-select:focus {
+            background: rgba(255,255,255,0.08);
+            border-color: rgba(201,168,76,0.5);
+        }
+
+        /* ── RIGHT: the scrollable panorama ── */
+        .listings-canvas {
+            flex: 1;
+            height: 100%;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /*
+          Background layer — always fills the canvas.
+          background-position-x is driven by JS progress (0%→100%)
+          so the image ALWAYS traverses its full width regardless of
+          how many cards exist. Never runs out, never breaks.
+        */
+        .listings-bg {
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+            background-image: url('/images/listings browse page.png');
+            background-size: auto 100%;
+            background-repeat: no-repeat;
+            background-position-x: 0%;
+            background-position-y: center;
+            will-change: background-position-x;
+        }
+        /* Top/bottom darkening for card readability */
+        .listings-bg::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(
+                to bottom,
+                rgba(8, 5, 2, 0.40) 0%,
+                transparent 28%,
+                transparent 68%,
+                rgba(8, 5, 2, 0.52) 100%
+            );
+        }
+
+        /*
+          Cards layer — separate from the background.
+          Translates independently; width set by JS measure().
+        */
+        .listings-cards {
+            position: absolute;
+            top: 0; left: 0;
+            height: 100%;
+            min-width: 100%;
+            z-index: 2;
+            pointer-events: none;
+            will-change: transform;
+            overflow: visible;
+        }
+
+        #cityGroupsWrap {
+            height: 100%;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            padding: 0 3rem;
+            gap: 0;
+            pointer-events: auto;
+        }
+
+        /* ── Vertical property card ── */
+        .listing-card {
+            width: 300px;
+            height: 280px;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            background: rgba(10, 7, 4, 0.72);
+            border: 1px solid rgba(201,168,76,0.22);
+            border-radius: 14px;
+            cursor: pointer;
+            position: relative;
+            transition: border-color 200ms ease, box-shadow 200ms ease, transform 200ms ease;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            overflow: hidden;
+        }
+        .listing-card:hover {
+            border-color: rgba(201,168,76,0.50);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.45), 0 0 20px rgba(201,168,76,0.07);
+            transform: translateY(-3px);
+        }
+        /* gold bottom accent bar on hover */
+        .listing-card::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 10%; right: 10%;
+            height: 2px;
+            background: linear-gradient(to right, transparent, var(--gold-500), transparent);
+            opacity: 0;
+            transition: opacity 200ms ease;
+        }
+        .listing-card:hover::after { opacity: 1; }
+
+        /* ── Image section (top 48% of card) ── */
+        .card-img {
+            width: 100%;
+            height: 134px;
+            flex-shrink: 0;
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(135deg,
+                #1c1409 0%, #2a1d0d 35%,
+                #1a1208 65%, #0f0b06 100%);
+        }
+        /* actual photo when imageUrl is set */
+        .card-img img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            transition: transform 300ms ease;
+        }
+        .listing-card:hover .card-img img { transform: scale(1.04); }
+
+        /* placeholder icon shown when no image */
+        .card-img-placeholder {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+            opacity: 0.25;
+        }
+        .card-img-placeholder svg { color: var(--gold-400); }
+        .card-img-placeholder span {
+            font-size: 0.52rem;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--gold-400);
+        }
+
+        /* subtle gradient over image bottom edge */
+        .card-img::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 48px;
+            background: linear-gradient(to top, rgba(10,7,4,0.85), transparent);
+        }
+
+        /* type badge overlaid on image */
+        .card-type {
+            position: absolute;
+            top: 0.6rem; left: 0.75rem;
+            font-size: 0.52rem;
+            font-weight: 700;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            color: var(--gold-400);
+            background: rgba(8,6,3,0.78);
+            border: 1px solid rgba(201,168,76,0.28);
+            padding: 0.2rem 0.55rem;
+            border-radius: 2px;
+            z-index: 1;
+        }
+
+        /* card index watermark on image */
+        .card-num {
+            position: absolute;
+            top: 0.6rem; right: 0.75rem;
+            font-family: 'Cinzel', serif;
+            font-size: 0.55rem;
+            color: rgba(201,168,76,0.35);
+            letter-spacing: 0.1em;
+            z-index: 1;
+        }
+
+        /* ── Text body (bottom section) ── */
+        .card-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 0.85rem 1rem 0.9rem;
+            gap: 0.2rem;
+            min-height: 0;
+        }
+        .card-title {
+            font-family: 'Cinzel', serif;
+            font-size: 0.84rem;
+            font-weight: 600;
+            color: #f0ebe0;
+            line-height: 1.35;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            line-clamp: 2;
+            overflow: hidden;
+            margin-bottom: 0.1rem;
+        }
+        .card-city {
+            font-size: 0.65rem;
+            color: rgba(200,190,170,0.42);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .card-sep {
+            width: 28px;
+            height: 1px;
+            background: rgba(201,168,76,0.22);
+            margin: 0.45rem 0;
+        }
+        .card-footer {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            margin-top: auto;
+        }
+        .card-price-wrap { display: flex; flex-direction: column; gap: 0.1rem; }
+        .card-price {
+            font-family: 'Cinzel', serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--gold-400);
+            line-height: 1;
+            white-space: nowrap;
+        }
+        .card-per {
+            font-size: 0.52rem;
+            color: rgba(200,190,170,0.28);
+            letter-spacing: 0.06em;
+        }
+        .card-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            font-size: 0.58rem;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: rgba(201,168,76,0.52);
+            text-decoration: none;
+            transition: gap 150ms ease, color 150ms ease;
+        }
+        .listing-card:hover .card-link { gap: 0.45rem; color: var(--gold-300); }
+
+        /* ── City column group ── */
+        .city-group {
+            display: flex;
+            flex-direction: row;
+            align-items: stretch;
+            gap: 0;
+            flex-shrink: 0;
+            margin-right: 2.2rem;
+        }
+        .city-group:last-child { margin-right: 0; }
+
+        /* Vertical city label pill */
+        .city-label-pill {
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+            transform: rotate(180deg);
+            color: var(--gold-300);
+            background: rgba(6, 4, 2, 0.72);
+            border: 1px solid rgba(201,168,76,0.35);
+            border-radius: 10px;
+            padding: 1.2rem 0.6rem;
+            margin-right: 0.85rem;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+            gap: 0.55rem;
+            flex-shrink: 0;
+            white-space: nowrap;
+            min-height: 140px;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+
+        /* Cards within a city group — stacked in two rows */
+        .city-cards-wrap {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+        .city-row {
+            display: flex;
+            flex-direction: row;
+            gap: 1.4rem;
+        }
+        .city-row + .city-row {
+            margin-top: 1.4rem;
+        }
+        /* Pill text spans */
+        .city-pill-pinyin {
+            font-family: 'Cinzel', serif;
+            font-size: 0.75rem;
+            font-weight: 900;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            color: var(--gold-300);
+        }
+        .city-pill-sep {
+            display: block;
+            width: 70%;
+            height: 1px;
+            background: rgba(201,168,76,0.3);
+            align-self: center;
+            flex-shrink: 0;
+            margin: 0.2rem 0;
+        }
+        .city-pill-hanzi {
+            /* Counter-rotate so CJK chars are NOT flipped by the parent rotate(180deg) */
+            transform: rotate(180deg);
+            font-family: 'Noto Serif SC', 'Noto Serif', 'SimSun', serif;
+            font-size: 1.05rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            color: rgba(212, 175, 95, 0.9);
+            writing-mode: vertical-rl;
+            text-orientation: upright;
+        }
+
+        .city-group-divider {
+            width: 1px;
+            background: linear-gradient(to bottom,
+                rgba(201,168,76,0.0) 0%,
+                rgba(201,168,76,0.28) 20%,
+                rgba(201,168,76,0.28) 80%,
+                rgba(201,168,76,0.0) 100%
+            );
+            margin: 0 2.2rem 0 0;
+            flex-shrink: 0;
+            align-self: stretch;
+        }
+
+        /* ── Custom scrollbar ── */
+        .listings-scrollbar {
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 38px;
+            display: flex;
+            align-items: center;
+            padding: 0 2rem;
+            gap: 0.85rem;
+            z-index: 10;
+            pointer-events: auto;
+            background: linear-gradient(to top, rgba(10,7,4,0.6) 0%, transparent 100%);
+        }
+        .sb-label {
+            font-size: 0.54rem;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            color: rgba(201,168,76,0.32);
+            flex-shrink: 0;
+        }
+        #sbPct {
+            color: rgba(201,168,76,0.85) !important;
+            font-weight: 700;
+        }
+        .sb-rail {
+            flex: 1;
+            height: 2px;
+            background: rgba(201,168,76,0.10);
+            border-radius: 99px;
+            position: relative;
+            cursor: pointer;
+        }
+        .sb-thumb {
+            position: absolute;
+            top: 50%; transform: translateY(-50%);
+            height: 6px;
+            min-width: 52px;
+            border-radius: 99px;
+            background: linear-gradient(90deg, var(--gold-500), var(--gold-300));
+            cursor: grab;
+            transition: height 150ms ease;
+            will-change: left, width;
+        }
+        .sb-thumb:active, .sb-rail:active .sb-thumb { cursor: grabbing; height: 8px; }
+        .sb-rail:hover .sb-thumb { height: 8px; }
+
+        /* ── Scroll hint ── */
+        .scroll-hint {
+            position: absolute;
+            bottom: 50px;
+            right: 2.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.58rem;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            color: var(--gold-400);
+            pointer-events: none;
+            animation: hint-drift 2.5s ease-in-out infinite;
+            transition: opacity 0.5s ease;
+            z-index: 10;
+        }
+        @keyframes hint-drift {
+            0%,100% { opacity: 0.4; transform: translateX(0); }
+            50%      { opacity: 0.85; transform: translateX(8px); }
+        }
+
+        /* ── Empty state ── */
+        .listings-empty {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            padding: 3rem;
+        }
+    </style>
+</head>
+<body>
+
+<nav class="lf-nav">
+    <a th:href="@{/listings}" class="lf-nav__brand">
+        <img th:src="@{/images/Navbar Wide Logo.png}" alt="Linju Find" class="lf-nav__brand-logo" width="140" height="46">
+    </a>
+    <ul class="lf-nav__links">
+        <li><a th:href="@{/listings}">Listings</a></li>
+        <li th:if="${session.loginUser.role != 'admin'}"><a th:href="@{/neighborhoods}">Neighborhoods</a></li>
+        <li th:if="${session.loginUser.role != 'admin'}"><a th:href="@{/listings/add}">Post</a></li>
+        <li th:if="${session.loginUser.role != 'admin'}"><a th:href="@{/listings/my}">My Listings</a></li>
+        <li th:if="${session.loginUser.role == 'admin'}"><a th:href="@{/admin/dashboard}" style="color:var(--gold-400);font-weight:600;">Admin Panel</a></li>
+        <li><a th:href="@{/logout}" class="lf-nav__logout">Logout</a></li>
+    </ul>
+</nav>
+
+<div class="listings-layout">
+
+    <!-- LEFT sidebar -->
+    <div class="listings-sidebar">
+        <p style="font-size:0.62rem;letter-spacing:0.2em;text-transform:uppercase;
+                  color:rgba(201,168,76,0.75);margin-bottom:0.5rem;">Community Housing</p>
+        <h2 style="font-size:1.75rem;color:#f0ebe0;margin-bottom:0.3rem;line-height:1.2;">
+            Browse<br>Listings
+        </h2>
+        <div class="lf-divider" style="margin-bottom:1rem;"></div>
+        <p style="margin-bottom:1.5rem;font-size:0.8rem;line-height:1.65;">
+            Honest, community-reviewed rentals across China's cities.
+        </p>
+
+        <form th:action="@{/listings}" method="get"
+              style="display:flex;flex-direction:column;gap:0.7rem;">
+            <div class="lf-form-group" style="margin:0;">
+                <label class="lf-label">City</label>
+                <input class="lf-input" type="text" name="city"
+                       th:value="${city}" placeholder="Any city">
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.6rem;">
+                <div class="lf-form-group" style="margin:0;">
+                    <label class="lf-label">Min ¥/mo</label>
+                    <input class="lf-input" type="number" name="minPrice"
+                           th:value="${minPrice}" placeholder="0">
+                </div>
+                <div class="lf-form-group" style="margin:0;">
+                    <label class="lf-label">Max ¥/mo</label>
+                    <input class="lf-input" type="number" name="maxPrice"
+                           th:value="${maxPrice}" placeholder="Any">
+                </div>
+            </div>
+            <div class="lf-form-group" style="margin:0;">
+                <label class="lf-label">Type</label>
+                <select class="lf-select" name="propertyType">
+                    <option value="">All Types</option>
+                    <option value="apartment" th:selected="${propertyType == 'apartment'}">Apartment</option>
+                    <option value="studio"    th:selected="${propertyType == 'studio'}">Studio</option>
+                    <option value="shared"    th:selected="${propertyType == 'shared'}">Shared Room</option>
+                </select>
+            </div>
+            <input type="hidden" name="page" value="1">
+            <div style="display:flex;gap:0.5rem;margin-top:0.15rem;">
+                <button type="submit" class="lf-btn lf-btn--primary">Search</button>
+                <a th:href="@{/listings}" class="lf-btn lf-btn--ghost">Clear</a>
+            </div>
+        </form>
+
+        <p style="margin-top:1.5rem;font-size:0.65rem;color:rgba(200,190,170,0.32);letter-spacing:0.05em;"
+           id="propCount">
+            <span th:text="${listings.size()}"></span> of
+            <span id="totalCount">...</span> properties
+        </p>
+    </div>
+
+    <!-- RIGHT: panorama canvas -->
+    <div class="listings-canvas" id="listingsCanvas">
+
+        <!-- Background layer (position-x driven by JS progress) -->
+        <div class="listings-bg" id="listingsBg"></div>
+
+        <!-- Cards layer (translateX driven by JS progress) -->
+        <div class="listings-cards" id="listingsCards">
+
+            <!-- Empty state (shown by Thymeleaf if no listings) -->
+            <div th:if="${listings.isEmpty()}" class="listings-empty">
+                <div class="lf-card" style="text-align:center;">
+                    <p style="margin-bottom:1rem;">No listings found.</p>
+                    <a th:href="@{/listings}" class="lf-btn lf-btn--outline lf-btn--sm">Clear Filters</a>
+                </div>
+            </div>
+
+            <!-- Hidden data source: all first-page listings as data attributes -->
+            <div id="listings-seed" style="display:none;" th:if="${!listings.isEmpty()}">
+                <div th:each="listing, stat : ${listings}"
+                     class="seed-item"
+                     th:data-id="${listing.id}"
+                     th:data-title="${listing.title}"
+                     th:data-city="${listing.city}"
+                     th:data-price="${listing.price}"
+                     th:data-type="${listing.propertyType}"
+                     th:data-image="${listing.imageUrl}">
+                </div>
+            </div>
+
+            <!-- City groups built by JS -->
+            <div id="cityGroupsWrap" style="display:flex;flex-direction:row;align-items:center;gap:0;height:100%;padding:0 3rem;"></div>
+
+        </div><!-- /.listings-cards -->
+
+        <!-- Scroll hint -->
+        <div class="scroll-hint" id="scrollHint">
+            Scroll
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none"
+                 viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+            </svg>
+        </div>
+
+        <!-- Custom scrollbar -->
+        <div class="listings-scrollbar">
+            <span class="sb-label">Explore</span>
+            <div class="sb-rail" id="sbRail">
+                <div class="sb-thumb" id="sbThumb"></div>
+            </div>
+            <span class="sb-label" id="sbPct">0%</span>
+        </div>
+
+    </div><!-- /.listings-canvas -->
+</div><!-- /.listings-layout -->
+
+<script th:inline="javascript">
+(function () {
+    var progress       = 0;
+    var progressTarget = 0;
+    var EASE           = 0.07;
+    var VIRTUAL_PX     = 5000;
+
+    var canvas   = document.getElementById('listingsCanvas');
+    var bgEl     = document.getElementById('listingsBg');
+    var cardsEl  = document.getElementById('listingsCards');
+    var wrap     = document.getElementById('cityGroupsWrap');
+    var sbRail   = document.getElementById('sbRail');
+    var sbThumb  = document.getElementById('sbThumb');
+    var sbPct    = document.getElementById('sbPct');
+    var hint     = document.getElementById('scrollHint');
+
+    var cardsMaxOffset = 0;
+
+    /* all listings accumulated across pages */
+    var allListings = [];
+    var globalIndex = 0;
+
+    var totalPages   = /*[[${totalPages}]]*/ 1;
+    var filterCity   = /*[[${city}]]*/ '';
+    var minPrice     = /*[[${minPrice}]]*/ '';
+    var maxPrice     = /*[[${maxPrice}]]*/ '';
+    var propertyType = /*[[${propertyType}]]*/ '';
+
+    function esc(s) {
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+                        .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    var PLACEHOLDER_SVG =
+        '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.2">' +
+        '<path stroke-linecap="round" stroke-linejoin="round" d="M3 9.75L12 3l9 6.75V21a.75.75 0 01-.75.75H3.75A.75.75 0 013 21V9.75z"/>' +
+        '<path stroke-linecap="round" stroke-linejoin="round" d="M9 21V12h6v9"/></svg>';
+
+    // Curated pool of real apartment / interior photos (Unsplash permanent CDN links).
+    // Used as a fallback when a listing has no stored image_url. External service —
+    // needs internet. To undo, revert the image line below to the "No Photo" block.
+    var FALLBACK_IMAGES = [
+        'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=600&h=400&fit=crop', // bright living room
+        'https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=600&h=400&fit=crop', // cozy sofa corner
+        'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&h=400&fit=crop', // modern living room
+        'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600&h=400&fit=crop',     // apartment interior
+        'https://images.unsplash.com/photo-1484154218962-a197022b5858?w=600&h=400&fit=crop', // white kitchen
+        'https://images.unsplash.com/photo-1556912172-45b7abe8b7e1?w=600&h=400&fit=crop',     // kitchen counter
+        'https://images.unsplash.com/photo-1505691938895-1758d7feb511?w=600&h=400&fit=crop', // bedroom
+        'https://images.unsplash.com/photo-1540518614846-7eded433c457?w=600&h=400&fit=crop', // studio bedroom
+        'https://images.unsplash.com/photo-1567767292278-a4f21aa2d36e?w=600&h=400&fit=crop', // minimalist room
+        'https://images.unsplash.com/photo-1554995207-c18c203602cb?w=600&h=400&fit=crop',     // open-plan apartment
+        'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=600&h=400&fit=crop', // warm lounge
+        'https://images.unsplash.com/photo-1598928506311-c55ded91a20c?w=600&h=400&fit=crop'  // furnished living space
+    ];
+
+    function buildCardHTML(l, idx) {
+        var n   = idx < 10 ? '0'+idx : ''+idx;
+        var u   = '/listings/' + l.id;
+        // Use the stored image if present, else a curated interior photo chosen
+        // deterministically by listing id (stable per listing).
+        var src = l.imageUrl || FALLBACK_IMAGES[l.id % FALLBACK_IMAGES.length];
+        var img = '<img src="'+esc(src)+'" alt="'+esc(l.title)+'">';
+        return '<div class="listing-card" onclick="window.location=\''+u+'\'">' +
+            '<div class="card-img">' +
+                img +
+                '<span class="card-type">'+esc(l.propertyType)+'</span>' +
+                '<span class="card-num">'+n+'</span>' +
+            '</div>' +
+            '<div class="card-body">' +
+                '<div class="card-title">'+esc(l.title)+'</div>' +
+                '<div class="card-city">'+esc(l.city)+'</div>' +
+                '<div class="card-sep"></div>' +
+                '<div class="card-footer">' +
+                    '<div class="card-price-wrap">' +
+                        '<div class="card-price">¥'+esc(String(l.price))+'</div>' +
+                        '<div class="card-per">per month</div>' +
+                    '</div>' +
+                    '<a href="'+u+'" class="card-link" onclick="event.stopPropagation()">' +
+                        'View <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>' +
+                    '</a>' +
+                '</div>' +
+            '</div></div>';
+    }
+
+    /* Case-insensitive lookup — keys stored lowercase */
+    var _cityHanziRaw = {
+        'beijing':   '北京', 'shanghai':  '上海', 'nanjing':   '南京',
+        'shenzhen':  '深圳', 'guangzhou': '广州', 'chengdu':   '成都',
+        'chongqing': '重庆', 'hangzhou':  '杭州', 'wuhan':     '武汉',
+        'xian':      '西安', "xi'an":     '西安', 'tianjin':   '天津',
+        'suzhou':    '苏州', 'qingdao':   '青岛', 'dalian':    '大连',
+        'kunming':   '昆明', 'xiamen':    '厦门', 'harbin':    '哈尔滨',
+        'zhengzhou': '郑州', 'changsha':  '长沙', 'hefei':     '合肥',
+        'fuzhou':    '福州', 'jinan':     '济南', 'shenyang':  '沈阳',
+        'ningbo':    '宁波', 'wuxi':      '无锡', 'foshan':    '佛山',
+        'nanchang':  '南昌', 'guiyang':   '贵阳', 'lanzhou':   '兰州',
+        'yinchuan':  '银川', 'hohhot':    '呼和浩特', 'huhhot': '呼和浩特',
+        'urumqi':    '乌鲁木齐', 'lhasa':  '拉萨', 'nanning':  '南宁',
+        'haikou':    '海口', 'sanya':     '三亚', 'guizhou':   '贵州',
+        'taiyuan':   '太原', 'shijiazhuang': '石家庄', 'changchun': '长春'
+    };
+    function cityHanziMap(city) {
+        return _cityHanziRaw[city.toLowerCase()] || null;
+    }
+
+    function rebuildCityGroups() {
+        if (!wrap) return;
+        wrap.innerHTML = '';
+
+        /* Group by city (preserve insertion order, alphabetical within group) */
+        var cityMap = {};
+        var cityOrder = [];
+        allListings.forEach(function (l) {
+            var c = l.city || 'Other';
+            if (!cityMap[c]) { cityMap[c] = []; cityOrder.push(c); }
+            cityMap[c].push(l);
+        });
+        cityOrder.sort();
+
+        var isFirst = true;
+        cityOrder.forEach(function (city) {
+            var group = cityMap[city];
+
+            /* Vertical divider between city groups */
+            if (!isFirst) {
+                var div = document.createElement('div');
+                div.className = 'city-group-divider';
+                wrap.appendChild(div);
+            }
+            isFirst = false;
+
+            /* City group container */
+            var groupEl = document.createElement('div');
+            groupEl.className = 'city-group';
+
+            /* Vertical pill label — pinyin + Hanzi on separate lines */
+            var pill = document.createElement('div');
+            pill.className = 'city-label-pill';
+            var hanzi = cityHanziMap(city);
+            if (hanzi) {
+                /* Hanzi first in DOM = top of pill visually (writing-mode:vertical-rl + rotate180) */
+                pill.innerHTML = '<span class="city-pill-hanzi">' + hanzi + '</span>' +
+                                 '<span class="city-pill-sep"></span>' +
+                                 '<span class="city-pill-pinyin">' + city + '</span>';
+            } else {
+                pill.textContent = city;
+            }
+            groupEl.appendChild(pill);
+
+            /* Two-row card wrap */
+            var cardsWrap = document.createElement('div');
+            cardsWrap.className = 'city-cards-wrap';
+
+            var row1El = document.createElement('div');
+            row1El.className = 'city-row';
+            var row2El = document.createElement('div');
+            row2El.className = 'city-row';
+
+            group.forEach(function (l, i) {
+                var cardHTML = buildCardHTML(l, l._idx);
+                (i % 2 === 0 ? row1El : row2El).insertAdjacentHTML('beforeend', cardHTML);
+            });
+
+            cardsWrap.appendChild(row1El);
+            if (row2El.children.length > 0) cardsWrap.appendChild(row2El);
+            groupEl.appendChild(cardsWrap);
+            wrap.appendChild(groupEl);
+        });
+
+        measure();
+
+        var el = document.getElementById('totalCount');
+        if (el) el.textContent = allListings.length;
+    }
+
+    function measure() {
+        if (!wrap || !canvas) return;
+        var totalW = Math.max(wrap.scrollWidth + 96, canvas.offsetWidth);
+        if (cardsEl) cardsEl.style.width = totalW + 'px';
+        cardsMaxOffset = Math.max(0, totalW - canvas.offsetWidth);
+        VIRTUAL_PX = Math.max(3000, cardsMaxOffset * 1.4);
+    }
+
+    /* ── Load seed data from hidden div ── */
+    var seedEls = document.querySelectorAll('#listings-seed .seed-item');
+    seedEls.forEach(function (el) {
+        globalIndex++;
+        allListings.push({
+            id:           el.dataset.id,
+            title:        el.dataset.title,
+            city:         el.dataset.city,
+            price:        el.dataset.price,
+            propertyType: el.dataset.type,
+            imageUrl:     el.dataset.image || null,
+            _idx:         globalIndex
+        });
+    });
+
+    /* ── Lazy-load remaining pages ── */
+    function pageUrl(p) {
+        var q = 'page='+p;
+        if (filterCity)   q += '&city='+encodeURIComponent(filterCity);
+        if (minPrice)     q += '&minPrice='+encodeURIComponent(minPrice);
+        if (maxPrice)     q += '&maxPrice='+encodeURIComponent(maxPrice);
+        if (propertyType) q += '&propertyType='+encodeURIComponent(propertyType);
+        return '/listings?'+q;
+    }
+
+    function parseSeedItems(html) {
+        var doc = new DOMParser().parseFromString(html, 'text/html');
+        return Array.from(doc.querySelectorAll('#listings-seed .seed-item')).map(function (el) {
+            return {
+                id:           el.dataset.id,
+                title:        el.dataset.title,
+                city:         el.dataset.city,
+                price:        el.dataset.price,
+                propertyType: el.dataset.type,
+                imageUrl:     el.dataset.image || null
+            };
+        });
+    }
+
+    function loadPage(p) {
+        return fetch(pageUrl(p), { credentials: 'same-origin' })
+            .then(function (r) { return r.text(); })
+            .then(function (html) {
+                parseSeedItems(html).forEach(function (l) {
+                    globalIndex++;
+                    l._idx = globalIndex;
+                    allListings.push(l);
+                });
+                rebuildCityGroups();
+            });
+    }
+
+    /* Initial render */
+    if (allListings.length > 0) {
+        rebuildCityGroups();
+    }
+
+    if (totalPages > 1) {
+        var chain = Promise.resolve();
+        for (var p = 2; p <= totalPages; p++) {
+            (function (pg) { chain = chain.then(function () { return loadPage(pg); }); })(p);
+        }
+    }
+
+    /* ── Wheel ── */
+    if (canvas) {
+        canvas.addEventListener('wheel', function (e) {
+            e.preventDefault();
+            var d = Math.abs(e.deltaY) > Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
+            progressTarget = Math.max(0, Math.min(1, progressTarget + d / VIRTUAL_PX));
+            if (hint) hint.style.opacity = '0';
+        }, { passive: false });
+    }
+
+    /* ── Touch ── */
+    var txStart = 0, ptStart = 0;
+    if (canvas) {
+        canvas.addEventListener('touchstart', function (e) {
+            txStart = e.touches[0].clientX; ptStart = progressTarget;
+        }, { passive: true });
+        canvas.addEventListener('touchmove', function (e) {
+            var dx = txStart - e.touches[0].clientX;
+            progressTarget = Math.max(0, Math.min(1, ptStart + dx / VIRTUAL_PX));
+        }, { passive: true });
+    }
+
+    /* ── Scrollbar drag ── */
+    var dragging = false, dragX0 = 0, dragP0 = 0;
+    if (sbThumb) {
+        sbThumb.addEventListener('mousedown', function (e) {
+            dragging = true; dragX0 = e.clientX; dragP0 = progressTarget;
+            e.preventDefault();
+        });
+    }
+    if (sbRail) {
+        sbRail.addEventListener('click', function (e) {
+            if (dragging) return;
+            var r = sbRail.getBoundingClientRect();
+            progressTarget = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
+        });
+    }
+    window.addEventListener('mousemove', function (e) {
+        if (!dragging || !sbRail) return;
+        progressTarget = Math.max(0, Math.min(1,
+            dragP0 + (e.clientX - dragX0) / sbRail.offsetWidth));
+    });
+    window.addEventListener('mouseup', function () { dragging = false; });
+
+    /* ── Animation loop ── */
+    function tick() {
+        requestAnimationFrame(tick);
+        progress += (progressTarget - progress) * EASE;
+        if (Math.abs(progressTarget - progress) < 0.0001) progress = progressTarget;
+
+        if (bgEl)    bgEl.style.backgroundPositionX = (progress * 100) + '%';
+        if (cardsEl) cardsEl.style.transform = 'translateX(-' + (progress * cardsMaxOffset) + 'px)';
+
+        if (sbRail && sbThumb) {
+            var railW  = sbRail.offsetWidth;
+            var thumbW = Math.max(56, railW * 0.13);
+            sbThumb.style.width = thumbW + 'px';
+            sbThumb.style.left  = (progress * (railW - thumbW)) + 'px';
+            if (sbPct) sbPct.textContent = Math.round(progress * 100) + '%';
+        }
+    }
+
+    window.addEventListener('resize', function () { measure(); });
+    tick();
+})();
+</script>
+
+<script th:src="@{/js/main.js(v=5)}"></script>
+</body>
+</html>

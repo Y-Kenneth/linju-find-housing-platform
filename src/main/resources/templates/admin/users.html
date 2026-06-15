@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Manage Users — Linju Find Admin</title>
+    <link th:href="@{/css/style.css}" rel="stylesheet">
+    <style>
+        .admin-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1.25rem;
+            flex-wrap: wrap;
+        }
+        .admin-search-wrap {
+            position: relative;
+            flex: 1;
+            min-width: 180px;
+            max-width: 280px;
+        }
+        .admin-search-wrap svg {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            pointer-events: none;
+        }
+        .admin-search-input {
+            width: 100%;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(201,168,76,0.2);
+            border-radius: 6px;
+            padding: 0.55rem 0.9rem 0.55rem 2.2rem;
+            font-family: 'Josefin Sans', sans-serif;
+            font-size: 0.82rem;
+            color: var(--text-primary);
+            outline: none;
+            transition: border-color 150ms, background 150ms;
+        }
+        .admin-search-input::placeholder { color: var(--text-muted); }
+        .admin-search-input:focus {
+            border-color: var(--gold-500);
+            background: rgba(255,255,255,0.07);
+            box-shadow: 0 0 0 3px rgba(201,168,76,0.1);
+        }
+        .admin-toolbar-label {
+            font-family: 'Josefin Sans', sans-serif;
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            white-space: nowrap;
+        }
+        .admin-sort-btn {
+            font-family: 'Josefin Sans', sans-serif;
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            padding: 0.45rem 0.85rem;
+            border-radius: 6px;
+            border: 1px solid rgba(201,168,76,0.22);
+            background: transparent;
+            color: var(--text-muted);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            transition: color 150ms, border-color 150ms, background 150ms;
+            white-space: nowrap;
+        }
+        .admin-sort-btn:hover { color: var(--gold-400); border-color: var(--gold-500); }
+        .admin-sort-btn.asc,
+        .admin-sort-btn.desc {
+            color: var(--charcoal-950);
+            background: var(--gold-500);
+            border-color: var(--gold-500);
+        }
+        .sort-arrow { font-size: 0.7rem; }
+        .admin-count-badge {
+            font-family: 'Josefin Sans', sans-serif;
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            margin-left: auto;
+            white-space: nowrap;
+        }
+    </style>
+</head>
+<body class="lf-admin-page">
+
+<nav class="lf-nav">
+    <a th:href="@{/admin/dashboard}" class="lf-nav__brand">
+        <img th:src="@{/images/Navbar Wide Logo.png}" alt="Linju Find" class="lf-nav__brand-logo" width="140" height="46">
+    </a>
+    <ul class="lf-nav__links">
+        <li><a th:href="@{/admin/dashboard}">Dashboard</a></li>
+        <li><a th:href="@{/admin/listings}">Listings</a></li>
+        <li><a th:href="@{/admin/reviews}">Reviews</a></li>
+        <li><a th:href="@{/admin/users}">Users</a></li>
+        <li><a th:href="@{/listings}">View Site</a></li>
+        <li><a th:href="@{/logout}" class="lf-nav__logout">Logout</a></li>
+    </ul>
+</nav>
+
+<div class="lf-page">
+    <div class="lf-page-header lf-reveal">
+        <p style="font-size:0.7rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--text-muted);">Moderation</p>
+        <h2>All Users</h2>
+        <div class="lf-divider"></div>
+    </div>
+
+    <div class="lf-admin-section">
+
+        <!-- Hidden data source -->
+        <div id="users-data" style="display:none;">
+            <div th:each="u : ${users}"
+                 class="user-row"
+                 th:data-id="${u.id}"
+                 th:data-username="${u.username}"
+                 th:data-email="${u.email}"
+                 th:data-nationality="${u.nationality}"
+                 th:data-city="${u.city}"
+                 th:data-role="${u.role}"
+                 th:data-joined="${u.createdAt}"
+                 th:data-deactivate-action="@{/admin/users/deactivate/{id}(id=${u.id})}">
+            </div>
+        </div>
+
+        <!-- Toolbar -->
+        <div class="admin-toolbar" id="users-toolbar">
+            <div class="admin-search-wrap">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none"
+                     viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"/><path stroke-linecap="round" d="M21 21l-4.35-4.35"/>
+                </svg>
+                <input class="admin-search-input" id="user-search"
+                       type="text" placeholder="Search username, city…" autocomplete="off">
+            </div>
+            <span class="admin-toolbar-label">Sort:</span>
+            <button class="admin-sort-btn" data-key="username">Username <span class="sort-arrow"></span></button>
+            <button class="admin-sort-btn" data-key="nationality">Nationality <span class="sort-arrow"></span></button>
+            <button class="admin-sort-btn" data-key="city">City <span class="sort-arrow"></span></button>
+            <button class="admin-sort-btn" data-key="role">Role <span class="sort-arrow"></span></button>
+            <button class="admin-sort-btn" data-key="joined">Joined <span class="sort-arrow"></span></button>
+            <span class="admin-count-badge" id="users-count"></span>
+        </div>
+
+        <!-- Table rendered by JS -->
+        <div class="lf-table-wrap">
+            <table class="lf-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Username</th>
+                        <th>Email</th>
+                        <th>Nationality</th>
+                        <th>City</th>
+                        <th>Role</th>
+                        <th>Joined</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="users-tbody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script th:src="@{/js/main.js(v=5)}"></script>
+<script>
+(function () {
+    var rows = document.querySelectorAll('#users-data .user-row');
+    if (!rows.length) return;
+
+    /* parse */
+    var data = Array.from(rows).map(function (el) {
+        return {
+            id:               el.dataset.id,
+            username:         el.dataset.username,
+            email:            el.dataset.email,
+            nationality:      el.dataset.nationality || '—',
+            city:             el.dataset.city        || '—',
+            role:             el.dataset.role,
+            joined:           el.dataset.joined,
+            deactivateAction: el.dataset.deactivateAction
+        };
+    });
+
+    var sortKey = null, sortDir = 1;
+    var searchQ = '';
+
+    function esc(s) {
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function roleBadge(role) {
+        if (role === 'admin')
+            return '<span class="lf-badge lf-badge--admin">admin</span>';
+        if (role === 'deactivated')
+            return '<span class="lf-badge lf-badge--deactivated">deactivated</span>';
+        return '<span style="font-size:0.8rem;color:var(--text-secondary)">' + esc(role) + '</span>';
+    }
+
+    function actionCell(u) {
+        if (u.role === 'admin')
+            return '<span style="font-size:0.78rem;color:var(--text-muted)">—</span>';
+        if (u.role === 'deactivated')
+            return '<span class="lf-badge lf-badge--deactivated">Deactivated</span>';
+        return '<form action="' + esc(u.deactivateAction) + '" method="post" style="display:inline">' +
+               '<button type="submit" class="lf-btn lf-btn--danger lf-btn--sm" ' +
+               'data-confirm="Deactivate this user?">Deactivate</button></form>';
+    }
+
+    function render() {
+        var filtered = data.filter(function (u) {
+            if (!searchQ) return true;
+            return u.username.toLowerCase().indexOf(searchQ) !== -1 ||
+                   u.city.toLowerCase().indexOf(searchQ) !== -1 ||
+                   u.nationality.toLowerCase().indexOf(searchQ) !== -1 ||
+                   u.email.toLowerCase().indexOf(searchQ) !== -1;
+        });
+
+        if (sortKey) {
+            filtered.sort(function (a, b) {
+                var va = String(a[sortKey]).toLowerCase();
+                var vb = String(b[sortKey]).toLowerCase();
+                return va < vb ? -sortDir : va > vb ? sortDir : 0;
+            });
+        }
+
+        var countEl = document.getElementById('users-count');
+        if (countEl) countEl.textContent = filtered.length + ' of ' + data.length + ' users';
+
+        document.getElementById('users-tbody').innerHTML = filtered.map(function (u) {
+            return '<tr>' +
+                '<td style="color:var(--text-muted)">' + esc(u.id) + '</td>' +
+                '<td style="font-weight:500">' + esc(u.username) + '</td>' +
+                '<td>' + esc(u.email) + '</td>' +
+                '<td>' + esc(u.nationality) + '</td>' +
+                '<td>' + esc(u.city) + '</td>' +
+                '<td>' + roleBadge(u.role) + '</td>' +
+                '<td><small>' + esc(u.joined) + '</small></td>' +
+                '<td>' + actionCell(u) + '</td>' +
+                '</tr>';
+        }).join('');
+    }
+
+    /* sort buttons */
+    document.querySelectorAll('#users-toolbar .admin-sort-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var key = btn.dataset.key;
+            if (sortKey === key) { sortDir = -sortDir; }
+            else { sortKey = key; sortDir = 1; }
+
+            document.querySelectorAll('#users-toolbar .admin-sort-btn').forEach(function (b) {
+                b.classList.remove('asc','desc');
+                b.querySelector('.sort-arrow').textContent = '';
+            });
+            btn.classList.add(sortDir === 1 ? 'asc' : 'desc');
+            btn.querySelector('.sort-arrow').textContent = sortDir === 1 ? '↑' : '↓';
+            render();
+        });
+    });
+
+    /* search */
+    document.getElementById('user-search').addEventListener('input', function () {
+        searchQ = this.value.trim().toLowerCase();
+        render();
+    });
+
+    render();
+})();
+</script>
+</body>
+</html>

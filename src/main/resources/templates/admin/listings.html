@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Manage Listings — Linju Find Admin</title>
+    <link th:href="@{/css/style.css}" rel="stylesheet">
+    <style>
+        /* ── City columns layout ── */
+        .admin-city-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .admin-city-section {
+            background: rgba(20,20,20,0.6);
+            border: 1px solid rgba(201,168,76,0.18);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        /* Section header with city name + sort controls */
+        .admin-city-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.85rem 1.1rem;
+            background: rgba(201,168,76,0.07);
+            border-bottom: 1px solid rgba(201,168,76,0.15);
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .admin-city-name {
+            font-family: 'Cinzel', serif;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--gold-400);
+            letter-spacing: 0.1em;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .admin-city-count {
+            font-family: 'Josefin Sans', sans-serif;
+            font-size: 0.65rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(201,168,76,0.15);
+            border-radius: 999px;
+            padding: 0.15rem 0.55rem;
+            letter-spacing: 0.08em;
+        }
+
+        .admin-sort-btns {
+            display: flex;
+            gap: 0.35rem;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .admin-sort-btn {
+            font-family: 'Josefin Sans', sans-serif;
+            font-size: 0.62rem;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            padding: 0.3rem 0.65rem;
+            border-radius: 4px;
+            border: 1px solid rgba(201,168,76,0.2);
+            background: transparent;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: color 150ms, border-color 150ms, background 150ms;
+            white-space: nowrap;
+        }
+
+        .admin-sort-btn:hover {
+            color: var(--gold-400);
+            border-color: var(--gold-500);
+        }
+
+        .admin-sort-btn.active-asc,
+        .admin-sort-btn.active-desc {
+            color: var(--charcoal-950);
+            background: var(--gold-500);
+            border-color: var(--gold-500);
+        }
+
+        /* Table inside each city section */
+        .admin-city-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.82rem;
+        }
+
+        .admin-city-table thead tr {
+            border-bottom: 1px solid rgba(201,168,76,0.1);
+        }
+
+        .admin-city-table thead th {
+            padding: 0.6rem 0.85rem;
+            text-align: left;
+            font-family: 'Josefin Sans', sans-serif;
+            font-size: 0.62rem;
+            font-weight: 700;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            white-space: nowrap;
+        }
+
+        .admin-city-table tbody tr {
+            border-bottom: 1px solid rgba(201,168,76,0.06);
+            transition: background 150ms;
+        }
+
+        .admin-city-table tbody tr:last-child {
+            border-bottom: none;
+        }
+
+        .admin-city-table tbody tr:hover {
+            background: rgba(201,168,76,0.04);
+        }
+
+        .admin-city-table tbody td {
+            padding: 0.65rem 0.85rem;
+            color: var(--text-secondary);
+            vertical-align: middle;
+        }
+
+        .admin-city-table td.td-title a {
+            color: var(--gold-400);
+            font-size: 0.8rem;
+            text-decoration: none;
+        }
+
+        .admin-city-table td.td-title a:hover {
+            color: var(--gold-200);
+        }
+
+        .admin-city-table td.td-price {
+            font-family: 'Cinzel', serif;
+            color: var(--gold-400);
+            white-space: nowrap;
+            font-size: 0.82rem;
+        }
+
+        .admin-city-table .td-actions {
+            white-space: nowrap;
+        }
+
+        .admin-city-table .td-actions form {
+            display: inline;
+        }
+
+        /* ── Global toolbar ── */
+        .admin-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .admin-search-wrap {
+            position: relative;
+            flex: 1;
+            min-width: 180px;
+            max-width: 320px;
+        }
+
+        .admin-search-wrap svg {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            pointer-events: none;
+        }
+
+        .admin-search-input {
+            width: 100%;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(201,168,76,0.2);
+            border-radius: 6px;
+            padding: 0.55rem 0.9rem 0.55rem 2.2rem;
+            font-family: 'Josefin Sans', sans-serif;
+            font-size: 0.82rem;
+            color: var(--text-primary);
+            outline: none;
+            transition: border-color 150ms, background 150ms;
+        }
+
+        .admin-search-input::placeholder { color: var(--text-muted); }
+
+        .admin-search-input:focus {
+            border-color: var(--gold-500);
+            background: rgba(255,255,255,0.07);
+            box-shadow: 0 0 0 3px rgba(201,168,76,0.1);
+        }
+
+        .admin-toolbar-label {
+            font-family: 'Josefin Sans', sans-serif;
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            white-space: nowrap;
+        }
+
+        .admin-city-order-btn {
+            font-family: 'Josefin Sans', sans-serif;
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            border: 1px solid rgba(201,168,76,0.22);
+            background: transparent;
+            color: var(--text-muted);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            transition: color 150ms, border-color 150ms, background 150ms;
+            white-space: nowrap;
+        }
+
+        .admin-city-order-btn:hover,
+        .admin-city-order-btn.active {
+            color: var(--charcoal-950);
+            background: var(--gold-500);
+            border-color: var(--gold-500);
+        }
+
+        .admin-no-results {
+            font-family: 'Josefin Sans', sans-serif;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            padding: 2rem 0;
+            text-align: center;
+            display: none;
+        }
+    </style>
+</head>
+<body class="lf-admin-page">
+
+<nav class="lf-nav">
+    <a th:href="@{/admin/dashboard}" class="lf-nav__brand">
+        <img th:src="@{/images/Navbar Wide Logo.png}" alt="Linju Find" class="lf-nav__brand-logo" width="140" height="46">
+    </a>
+    <ul class="lf-nav__links">
+        <li><a th:href="@{/admin/dashboard}">Dashboard</a></li>
+        <li><a th:href="@{/admin/listings}">Listings</a></li>
+        <li><a th:href="@{/admin/reviews}">Reviews</a></li>
+        <li><a th:href="@{/admin/users}">Users</a></li>
+        <li><a th:href="@{/listings}">View Site</a></li>
+        <li><a th:href="@{/logout}" class="lf-nav__logout">Logout</a></li>
+    </ul>
+</nav>
+
+<div class="lf-page">
+    <div class="lf-page-header lf-reveal">
+        <p style="font-size:0.7rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--text-muted);">Moderation</p>
+        <h2>All Listings</h2>
+        <div class="lf-divider"></div>
+    </div>
+
+    <div class="lf-admin-section">
+        <div th:if="${listings.isEmpty()}" class="lf-card">
+            <p>No listings in the system.</p>
+        </div>
+
+        <!-- Hidden data source: Thymeleaf renders all rows here, JS reads them -->
+        <div id="listings-data" style="display:none;" th:if="${!listings.isEmpty()}">
+            <div th:each="listing : ${listings}"
+                 class="listing-row"
+                 th:data-id="${listing.id}"
+                 th:data-title="${listing.title}"
+                 th:data-city="${listing.city}"
+                 th:data-type="${listing.propertyType}"
+                 th:data-price="${listing.price}"
+                 th:data-status="${listing.status}"
+                 th:data-href="@{/listings/{id}(id=${listing.id})}"
+                 th:data-approve-action="@{/admin/listings/approve/{id}(id=${listing.id})}"
+                 th:data-delete-action="@{/admin/listings/delete/{id}(id=${listing.id})}">
+            </div>
+        </div>
+
+        <!-- Global toolbar: search + city sort -->
+        <div class="admin-toolbar" id="admin-toolbar" style="display:none;">
+            <div class="admin-search-wrap">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none"
+                     viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"/><path stroke-linecap="round" d="M21 21l-4.35-4.35"/>
+                </svg>
+                <input class="admin-search-input" id="city-search"
+                       type="text" placeholder="Search city…" autocomplete="off">
+            </div>
+            <span class="admin-toolbar-label">Sort cities:</span>
+            <button class="admin-city-order-btn active" id="btn-city-asc">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none"
+                     viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"/>
+                </svg>
+                A → Z
+            </button>
+            <button class="admin-city-order-btn" id="btn-city-desc">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none"
+                     viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4"/>
+                </svg>
+                Z → A
+            </button>
+            <button class="admin-city-order-btn" id="btn-city-count">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none"
+                     viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4"/>
+                </svg>
+                Most Listings
+            </button>
+        </div>
+        <div class="admin-no-results" id="no-results">No cities match your search.</div>
+
+        <!-- City columns injected here by JS -->
+        <div class="admin-city-grid" id="city-grid"></div>
+    </div>
+</div>
+
+<script th:src="@{/js/main.js(v=5)}"></script>
+<script>
+(function () {
+    var rows = document.querySelectorAll('#listings-data .listing-row');
+    if (!rows.length) return;
+
+    /* ── 1. Parse all listings from data attributes ── */
+    var listings = Array.from(rows).map(function (el) {
+        return {
+            id:            el.dataset.id,
+            title:         el.dataset.title,
+            city:          el.dataset.city,
+            type:          el.dataset.type,
+            price:         parseFloat(el.dataset.price),
+            status:        el.dataset.status,
+            href:          el.dataset.href,
+            approveAction: el.dataset.approveAction,
+            deleteAction:  el.dataset.deleteAction
+        };
+    });
+
+    /* ── 2. Group by city, preserving first-seen order ── */
+    var cityOrder = [];
+    var cityMap   = {};
+    listings.forEach(function (l) {
+        if (!cityMap[l.city]) {
+            cityMap[l.city] = [];
+            cityOrder.push(l.city);
+        }
+        cityMap[l.city].push(l);
+    });
+
+    /* ── 3. Sort state per city ── */
+    var sortState = {};
+    cityOrder.forEach(function (c) { sortState[c] = { key: null, dir: 1 }; });
+
+    /* ── 4. Render helpers ── */
+    function esc(s) {
+        return String(s)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function badge(status) {
+        var cls = status === 'approved' ? 'lf-badge lf-badge--approved' : 'lf-badge lf-badge--pending';
+        return '<span class="' + cls + '">' + esc(status) + '</span>';
+    }
+
+    function renderRows(city, items) {
+        var tbody = document.querySelector('#tbody-' + CSS.escape(city));
+        if (!tbody) return;
+        tbody.innerHTML = items.map(function (l) {
+            var approveBtn = l.status === 'pending'
+                ? '<form action="' + esc(l.approveAction) + '" method="post" style="display:inline">' +
+                  '<button type="submit" class="lf-btn lf-btn--outline lf-btn--sm">Approve</button></form> '
+                : '';
+            var deleteBtn =
+                '<form action="' + esc(l.deleteAction) + '" method="post" style="display:inline">' +
+                '<button type="submit" class="lf-btn lf-btn--danger lf-btn--sm" ' +
+                'data-confirm="Delete this listing? This will also remove its reviews.">Delete</button></form>';
+            return '<tr>' +
+                '<td style="color:var(--text-muted)">' + esc(l.id) + '</td>' +
+                '<td class="td-title"><a href="' + esc(l.href) + '">' + esc(l.title) + '</a></td>' +
+                '<td>' + esc(l.type) + '</td>' +
+                '<td class="td-price">¥' + l.price.toFixed(1) + '</td>' +
+                '<td>' + badge(l.status) + '</td>' +
+                '<td class="td-actions">' + approveBtn + deleteBtn + '</td>' +
+                '</tr>';
+        }).join('');
+    }
+
+    /* ── 5. Sort handler ── */
+    function sortCity(city, key, btn) {
+        var state = sortState[city];
+        /* toggle direction if same key, else reset to asc */
+        if (state.key === key) {
+            state.dir = -state.dir;
+        } else {
+            state.key = key;
+            state.dir = 1;
+        }
+
+        /* update button states */
+        var section = document.getElementById('section-' + CSS.escape(city));
+        section.querySelectorAll('.admin-sort-btn').forEach(function (b) {
+            b.classList.remove('active-asc', 'active-desc');
+        });
+        btn.classList.add(state.dir === 1 ? 'active-asc' : 'active-desc');
+
+        /* sort the city's data */
+        var items = cityMap[city].slice();
+        items.sort(function (a, b) {
+            var va, vb;
+            if (key === 'price') {
+                va = a.price; vb = b.price;
+            } else if (key === 'type') {
+                va = a.type.toLowerCase(); vb = b.type.toLowerCase();
+            } else {
+                va = a.status.toLowerCase(); vb = b.status.toLowerCase();
+            }
+            if (va < vb) return -state.dir;
+            if (va > vb) return  state.dir;
+            return 0;
+        });
+
+        renderRows(city, items);
+    }
+
+    /* ── 6. Show toolbar now that we have data ── */
+    var toolbar = document.getElementById('admin-toolbar');
+    if (toolbar) toolbar.style.display = 'flex';
+
+    /* ── 7. Build city sections ── */
+    var grid = document.getElementById('city-grid');
+
+    cityOrder.forEach(function (city) {
+        var items = cityMap[city];
+        var safeId = city.replace(/[^a-zA-Z0-9_-]/g, '_');
+
+        var section = document.createElement('div');
+        section.className = 'admin-city-section';
+        section.id = 'section-' + safeId;
+
+        section.innerHTML =
+            '<div class="admin-city-header">' +
+                '<div class="admin-city-name">' +
+                    esc(city) +
+                    '<span class="admin-city-count">' + items.length + '</span>' +
+                '</div>' +
+                '<div class="admin-sort-btns">' +
+                    '<button class="admin-sort-btn" data-city="' + esc(city) + '" data-key="type">Type</button>' +
+                    '<button class="admin-sort-btn" data-city="' + esc(city) + '" data-key="price">Price</button>' +
+                    '<button class="admin-sort-btn" data-city="' + esc(city) + '" data-key="status">Status</button>' +
+                '</div>' +
+            '</div>' +
+            '<table class="admin-city-table">' +
+                '<thead><tr>' +
+                    '<th>ID</th><th>Title</th><th>Type</th><th>Price</th><th>Status</th><th>Actions</th>' +
+                '</tr></thead>' +
+                '<tbody id="tbody-' + safeId + '"></tbody>' +
+            '</table>';
+
+        grid.appendChild(section);
+
+        /* render initial rows */
+        /* patch tbody id to use safeId (CSS.escape may differ from safeId) */
+        var tbody = section.querySelector('tbody');
+        tbody.id = 'tbody-' + safeId;
+
+        renderRows._tbodies = renderRows._tbodies || {};
+        renderRows._tbodies[city] = tbody;
+
+        /* initial render directly */
+        tbody.innerHTML = items.map(function (l) {
+            var approveBtn = l.status === 'pending'
+                ? '<form action="' + esc(l.approveAction) + '" method="post" style="display:inline">' +
+                  '<button type="submit" class="lf-btn lf-btn--outline lf-btn--sm">Approve</button></form> '
+                : '';
+            var deleteBtn =
+                '<form action="' + esc(l.deleteAction) + '" method="post" style="display:inline">' +
+                '<button type="submit" class="lf-btn lf-btn--danger lf-btn--sm" ' +
+                'data-confirm="Delete this listing? This will also remove its reviews.">Delete</button></form>';
+            return '<tr>' +
+                '<td style="color:var(--text-muted)">' + esc(l.id) + '</td>' +
+                '<td class="td-title"><a href="' + esc(l.href) + '">' + esc(l.title) + '</a></td>' +
+                '<td>' + esc(l.type) + '</td>' +
+                '<td class="td-price">¥' + l.price.toFixed(1) + '</td>' +
+                '<td>' + badge(l.status) + '</td>' +
+                '<td class="td-actions">' + approveBtn + deleteBtn + '</td>' +
+                '</tr>';
+        }).join('');
+
+        /* wire sort buttons */
+        section.querySelectorAll('.admin-sort-btn').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var c = btn.dataset.city;
+                var k = btn.dataset.key;
+
+                /* re-point renderRows to use the live tbody */
+                var liveSection = document.getElementById('section-' + c.replace(/[^a-zA-Z0-9_-]/g, '_'));
+                var liveTbody   = liveSection ? liveSection.querySelector('tbody') : null;
+
+                var state = sortState[c];
+                var dir = (state.key === k) ? -state.dir : 1;
+                state.key = k; state.dir = dir;
+
+                liveSection.querySelectorAll('.admin-sort-btn').forEach(function (b) {
+                    b.classList.remove('active-asc', 'active-desc');
+                });
+                btn.classList.add(dir === 1 ? 'active-asc' : 'active-desc');
+
+                var sorted = cityMap[c].slice().sort(function (a, b) {
+                    var va, vb;
+                    if (k === 'price')       { va = a.price;            vb = b.price; }
+                    else if (k === 'type')   { va = a.type.toLowerCase();  vb = b.type.toLowerCase(); }
+                    else                     { va = a.status.toLowerCase(); vb = b.status.toLowerCase(); }
+                    return va < vb ? -dir : va > vb ? dir : 0;
+                });
+
+                if (liveTbody) {
+                    liveTbody.innerHTML = sorted.map(function (l) {
+                        var approveBtn = l.status === 'pending'
+                            ? '<form action="' + esc(l.approveAction) + '" method="post" style="display:inline">' +
+                              '<button type="submit" class="lf-btn lf-btn--outline lf-btn--sm">Approve</button></form> '
+                            : '';
+                        var deleteBtn =
+                            '<form action="' + esc(l.deleteAction) + '" method="post" style="display:inline">' +
+                            '<button type="submit" class="lf-btn lf-btn--danger lf-btn--sm" ' +
+                            'data-confirm="Delete this listing? This will also remove its reviews.">Delete</button></form>';
+                        return '<tr>' +
+                            '<td style="color:var(--text-muted)">' + esc(l.id) + '</td>' +
+                            '<td class="td-title"><a href="' + esc(l.href) + '">' + esc(l.title) + '</a></td>' +
+                            '<td>' + esc(l.type) + '</td>' +
+                            '<td class="td-price">¥' + l.price.toFixed(1) + '</td>' +
+                            '<td>' + badge(l.status) + '</td>' +
+                            '<td class="td-actions">' + approveBtn + deleteBtn + '</td>' +
+                            '</tr>';
+                    }).join('');
+                }
+            });
+        });
+    });
+    /* ── 8. City-order sort ── */
+    var cityOrder_current = cityOrder.slice(); /* mutable display order */
+
+    function reorderGrid(order) {
+        order.forEach(function (city) {
+            var safeId  = city.replace(/[^a-zA-Z0-9_-]/g, '_');
+            var section = document.getElementById('section-' + safeId);
+            if (section) grid.appendChild(section); /* move to end = reorder */
+        });
+    }
+
+    function setOrderBtn(active) {
+        ['btn-city-asc','btn-city-desc','btn-city-count'].forEach(function (id) {
+            var b = document.getElementById(id);
+            if (b) b.classList.toggle('active', b.id === active);
+        });
+    }
+
+    var btnAsc   = document.getElementById('btn-city-asc');
+    var btnDesc  = document.getElementById('btn-city-desc');
+    var btnCount = document.getElementById('btn-city-count');
+
+    if (btnAsc) btnAsc.addEventListener('click', function () {
+        cityOrder_current = cityOrder.slice().sort(function (a, b) {
+            return a.localeCompare(b);
+        });
+        reorderGrid(cityOrder_current);
+        setOrderBtn('btn-city-asc');
+        applySearch();
+    });
+
+    if (btnDesc) btnDesc.addEventListener('click', function () {
+        cityOrder_current = cityOrder.slice().sort(function (a, b) {
+            return b.localeCompare(a);
+        });
+        reorderGrid(cityOrder_current);
+        setOrderBtn('btn-city-desc');
+        applySearch();
+    });
+
+    if (btnCount) btnCount.addEventListener('click', function () {
+        cityOrder_current = cityOrder.slice().sort(function (a, b) {
+            return cityMap[b].length - cityMap[a].length;
+        });
+        reorderGrid(cityOrder_current);
+        setOrderBtn('btn-city-count');
+        applySearch();
+    });
+
+    /* ── 9. City search filter ── */
+    var noResults = document.getElementById('no-results');
+
+    function applySearch() {
+        var q = (document.getElementById('city-search').value || '').trim().toLowerCase();
+        var visible = 0;
+        cityOrder_current.forEach(function (city) {
+            var safeId  = city.replace(/[^a-zA-Z0-9_-]/g, '_');
+            var section = document.getElementById('section-' + safeId);
+            if (!section) return;
+            var match = !q || city.toLowerCase().indexOf(q) !== -1;
+            section.style.display = match ? '' : 'none';
+            if (match) visible++;
+        });
+        if (noResults) noResults.style.display = (visible === 0 ? 'block' : 'none');
+    }
+
+    var searchInput = document.getElementById('city-search');
+    if (searchInput) searchInput.addEventListener('input', applySearch);
+
+})();
+</script>
+</body>
+</html>

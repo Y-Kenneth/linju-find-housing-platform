@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Write a Review — Linju Find</title>
+    <link th:href="@{/css/style.css}" rel="stylesheet">
+</head>
+<body>
+
+<nav class="lf-nav">
+    <a th:href="@{/listings}" class="lf-nav__brand">
+        <img th:src="@{/images/Navbar Wide Logo.png}" alt="Linju Find" class="lf-nav__brand-logo" width="140" height="46">
+    </a>
+    <ul class="lf-nav__links">
+        <li><a th:href="@{/listings/{id}(id=${listingId})}">← Back to Listing</a></li>
+        <li><a th:href="@{/logout}" class="lf-nav__logout">Logout</a></li>
+    </ul>
+</nav>
+
+<div class="lf-page">
+    <div class="lf-page-header lf-reveal">
+        <p style="font-size:0.7rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--gold-500);">Community Review</p>
+        <h2>Write a Review</h2>
+        <div class="lf-divider"></div>
+        <p>Share your honest experience to help others make informed decisions.</p>
+    </div>
+
+    <div class="lf-form-page lf-reveal lf-reveal--delay-1">
+        <div class="lf-card">
+            <div class="lf-alert lf-alert--error" th:if="${error}" th:text="${error}"></div>
+
+            <form th:action="@{/reviews/add/{id}(id=${listingId})}" method="post">
+                <div class="lf-form-group">
+                    <label class="lf-label" for="rating">Rating *</label>
+                    <select class="lf-select" id="rating" name="rating" required>
+                        <option value="">Select a rating</option>
+                        <option value="5">5 — Excellent</option>
+                        <option value="4">4 — Good</option>
+                        <option value="3">3 — Average</option>
+                        <option value="2">2 — Poor</option>
+                        <option value="1">1 — Terrible</option>
+                    </select>
+                </div>
+                <div class="lf-form-group">
+                    <label class="lf-label" for="reviewText">Your Review *</label>
+                    <textarea class="lf-textarea" id="reviewText" name="reviewText" rows="6" required
+                              placeholder="Share your honest experience — cleanliness, neighbours, transport, landlord responsiveness..."></textarea>
+                </div>
+                <div style="margin-top:1.75rem;display:flex;gap:0.75rem;">
+                    <button type="submit" class="lf-btn lf-btn--primary">Submit Review</button>
+                    <a th:href="@{/listings/{id}(id=${listingId})}" class="lf-btn lf-btn--ghost">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script th:src="@{/js/main.js(v=5)}"></script>
+</body>
+</html>

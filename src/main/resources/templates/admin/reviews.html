@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Manage Reviews — Linju Find Admin</title>
+    <link th:href="@{/css/style.css}" rel="stylesheet">
+    <style>
+        /* ── Shared toolbar styles (same pattern as listings page) ── */
+        .admin-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1.25rem;
+            flex-wrap: wrap;
+        }
+        .admin-search-wrap {
+            position: relative;
+            flex: 1;
+            min-width: 180px;
+            max-width: 280px;
+        }
+        .admin-search-wrap svg {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            pointer-events: none;
+        }
+        .admin-search-input {
+            width: 100%;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(201,168,76,0.2);
+            border-radius: 6px;
+            padding: 0.55rem 0.9rem 0.55rem 2.2rem;
+            font-family: 'Josefin Sans', sans-serif;
+            font-size: 0.82rem;
+            color: var(--text-primary);
+            outline: none;
+            transition: border-color 150ms, background 150ms;
+        }
+        .admin-search-input::placeholder { color: var(--text-muted); }
+        .admin-search-input:focus {
+            border-color: var(--gold-500);
+            background: rgba(255,255,255,0.07);
+            box-shadow: 0 0 0 3px rgba(201,168,76,0.1);
+        }
+        .admin-toolbar-label {
+            font-family: 'Josefin Sans', sans-serif;
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            white-space: nowrap;
+        }
+        .admin-sort-btn {
+            font-family: 'Josefin Sans', sans-serif;
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            padding: 0.45rem 0.85rem;
+            border-radius: 6px;
+            border: 1px solid rgba(201,168,76,0.22);
+            background: transparent;
+            color: var(--text-muted);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            transition: color 150ms, border-color 150ms, background 150ms;
+            white-space: nowrap;
+        }
+        .admin-sort-btn:hover { color: var(--gold-400); border-color: var(--gold-500); }
+        .admin-sort-btn.asc,
+        .admin-sort-btn.desc {
+            color: var(--charcoal-950);
+            background: var(--gold-500);
+            border-color: var(--gold-500);
+        }
+        .sort-arrow { font-size: 0.7rem; }
+        .admin-count-badge {
+            font-family: 'Josefin Sans', sans-serif;
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            margin-left: auto;
+            white-space: nowrap;
+        }
+    </style>
+</head>
+<body class="lf-admin-page">
+
+<nav class="lf-nav">
+    <a th:href="@{/admin/dashboard}" class="lf-nav__brand">
+        <img th:src="@{/images/Navbar Wide Logo.png}" alt="Linju Find" class="lf-nav__brand-logo" width="140" height="46">
+    </a>
+    <ul class="lf-nav__links">
+        <li><a th:href="@{/admin/dashboard}">Dashboard</a></li>
+        <li><a th:href="@{/admin/listings}">Listings</a></li>
+        <li><a th:href="@{/admin/reviews}">Reviews</a></li>
+        <li><a th:href="@{/admin/users}">Users</a></li>
+        <li><a th:href="@{/listings}">View Site</a></li>
+        <li><a th:href="@{/logout}" class="lf-nav__logout">Logout</a></li>
+    </ul>
+</nav>
+
+<div class="lf-page">
+    <div class="lf-page-header lf-reveal">
+        <p style="font-size:0.7rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--text-muted);">Moderation</p>
+        <h2>All Reviews</h2>
+        <div class="lf-divider"></div>
+    </div>
+
+    <div class="lf-admin-section">
+        <div th:if="${reviews.isEmpty()}" class="lf-card">
+            <p>No reviews in the system.</p>
+        </div>
+
+        <!-- Hidden data source -->
+        <div id="reviews-data" style="display:none;" th:if="${!reviews.isEmpty()}">
+            <div th:each="r : ${reviews}"
+                 class="review-row"
+                 th:data-id="${r.id}"
+                 th:data-username="${r.username}"
+                 th:data-listing-id="${r.listingId}"
+                 th:data-rating="${r.rating}"
+                 th:data-text="${r.reviewText}"
+                 th:data-date="${r.createdAt}"
+                 th:data-listing-href="@{/listings/{id}(id=${r.listingId})}"
+                 th:data-delete-action="@{/admin/reviews/delete/{id}(id=${r.id})}">
+            </div>
+        </div>
+
+        <!-- Toolbar -->
+        <div class="admin-toolbar" id="reviews-toolbar" style="display:none;">
+            <div class="admin-search-wrap">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none"
+                     viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"/><path stroke-linecap="round" d="M21 21l-4.35-4.35"/>
+                </svg>
+                <input class="admin-search-input" id="review-search"
+                       type="text" placeholder="Search user or review…" autocomplete="off">
+            </div>
+            <span class="admin-toolbar-label">Sort:</span>
+            <button class="admin-sort-btn" data-key="username">User <span class="sort-arrow"></span></button>
+            <button class="admin-sort-btn" data-key="listingId">Listing <span class="sort-arrow"></span></button>
+            <button class="admin-sort-btn" data-key="rating">Rating <span class="sort-arrow"></span></button>
+            <button class="admin-sort-btn" data-key="date">Date <span class="sort-arrow"></span></button>
+            <span class="admin-count-badge" id="reviews-count"></span>
+        </div>
+
+        <!-- Table rendered by JS -->
+        <div class="lf-table-wrap" id="reviews-table-wrap" style="display:none;">
+            <table class="lf-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>User</th>
+                        <th>Listing</th>
+                        <th style="text-align:center;">Rating</th>
+                        <th>Review</th>
+                        <th>Date</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="reviews-tbody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script th:src="@{/js/main.js(v=5)}"></script>
+<script>
+(function () {
+    var rows = document.querySelectorAll('#reviews-data .review-row');
+    if (!rows.length) return;
+
+    /* parse */
+    var data = Array.from(rows).map(function (el) {
+        return {
+            id:          el.dataset.id,
+            username:    el.dataset.username,
+            listingId:   parseInt(el.dataset.listingId, 10),
+            rating:      parseInt(el.dataset.rating, 10),
+            text:        el.dataset.text,
+            date:        el.dataset.date,
+            listingHref: el.dataset.listingHref,
+            deleteAction:el.dataset.deleteAction
+        };
+    });
+
+    var sortKey = null, sortDir = 1;
+    var searchQ = '';
+
+    document.getElementById('reviews-toolbar').style.display  = 'flex';
+    document.getElementById('reviews-table-wrap').style.display = '';
+
+    function esc(s) {
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function render() {
+        var filtered = data.filter(function (r) {
+            if (!searchQ) return true;
+            return r.username.toLowerCase().indexOf(searchQ) !== -1 ||
+                   r.text.toLowerCase().indexOf(searchQ) !== -1;
+        });
+
+        if (sortKey) {
+            filtered.sort(function (a, b) {
+                var va, vb;
+                if (sortKey === 'rating' || sortKey === 'listingId') { va = a[sortKey]; vb = b[sortKey]; }
+                else if (sortKey === 'date') { va = a.date; vb = b.date; }
+                else { va = String(a[sortKey]).toLowerCase(); vb = String(b[sortKey]).toLowerCase(); }
+                return va < vb ? -sortDir : va > vb ? sortDir : 0;
+            });
+        }
+
+        var countEl = document.getElementById('reviews-count');
+        if (countEl) countEl.textContent = filtered.length + ' of ' + data.length + ' reviews';
+
+        document.getElementById('reviews-tbody').innerHTML = filtered.map(function (r) {
+            return '<tr>' +
+                '<td style="color:var(--text-muted)">' + esc(r.id) + '</td>' +
+                '<td style="font-weight:500">' + esc(r.username) + '</td>' +
+                '<td><a href="' + esc(r.listingHref) + '" style="color:var(--gold-400)">' + esc(r.listingId) + '</a></td>' +
+                '<td style="text-align:center">' +
+                    '<span style="font-family:\'Cinzel\',serif;color:var(--gold-400)">' + r.rating + '</span>' +
+                    '<span style="color:var(--text-muted)">/5</span>' +
+                '</td>' +
+                '<td style="max-width:260px;font-size:0.82rem">' + esc(r.text) + '</td>' +
+                '<td><small>' + esc(r.date) + '</small></td>' +
+                '<td>' +
+                    '<form action="' + esc(r.deleteAction) + '" method="post" style="display:inline">' +
+                    '<button type="submit" class="lf-btn lf-btn--danger lf-btn--sm" data-confirm="Delete this review?">Delete</button>' +
+                    '</form>' +
+                '</td>' +
+                '</tr>';
+        }).join('');
+    }
+
+    /* sort buttons */
+    document.querySelectorAll('#reviews-toolbar .admin-sort-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var key = btn.dataset.key;
+            if (sortKey === key) { sortDir = -sortDir; }
+            else { sortKey = key; sortDir = 1; }
+
+            document.querySelectorAll('#reviews-toolbar .admin-sort-btn').forEach(function (b) {
+                b.classList.remove('asc','desc');
+                b.querySelector('.sort-arrow').textContent = '';
+            });
+            btn.classList.add(sortDir === 1 ? 'asc' : 'desc');
+            btn.querySelector('.sort-arrow').textContent = sortDir === 1 ? '↑' : '↓';
+            render();
+        });
+    });
+
+    /* search */
+    document.getElementById('review-search').addEventListener('input', function () {
+        searchQ = this.value.trim().toLowerCase();
+        render();
+    });
+
+    render();
+})();
+</script>
+</body>
+</html>

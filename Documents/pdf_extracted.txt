@@ -1,0 +1,534 @@
+Total pages: 19
+
+
+========== PAGE 1 ==========
+ 
+ 
+ 
+Final Course Design Report 
+Community-Driven Housing Information Platform Addressing 
+China's Property Market Challenge 
+A Web Application Response to the Property Crisis in China 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+Kenneth 葛嘉诚 / L25020009 / IT-1 
+Course:  J2EE-Based Framework for Enterprise 
+ 
+ 
+软件工程 
+南京晓庄学院 
+ 
+2026 
+  
+
+
+========== PAGE 2 ==========
+2 
+ 
+Chapter 1 — Project Topic Selection and Explanation 
+1.1  What Is This Project? 
+This project is a community-based housing discovery and review platform built for foreigners 
+and young people living in Chinese cities. Users can browse affordable housing listings, read 
+honest reviews from other tenants, and rate neighborhoods based on their real living experience. 
+The platform is built using Java J2EE technologies with a MySQL database backend. 
+1.2  What Problem Does It Address? 
+China is currently going through one of the worst property crises in its history. For roughly two 
+decades, real estate was treated as the safest and most profitable investment in the country. 
+Developers borrowed enormous amounts of money to build as fast a s possible, and ordinary 
+families poured their savings into apartments — not necessarily to live in, but because they 
+believed property prices would always go up. 
+That belief has now broken. Major developers like Evergrande have collapsed under hundreds 
+of billions of dollars in debt. Across the country, there are an estimated 65 to 80 million empty 
+apartments that nobody is living in. Entire districts were built faster than the actual population 
+needed them, and in many cities, new residential areas stand almost completely empty — what 
+people now call "ghost cities." 
+  
+(News coverage of China's property crisis. Source: X, 微博 ) 
+
+
+========== PAGE 3 ==========
+3 
+ 
+The crisis is made worse by two deeper issues. First, China's birth rate has been falling for 
+years, which means there are fewer young families forming and therefore less natural demand 
+for new housing. Second, many people who could afford to buy are simpl y choosing not to , 
+because they are afraid prices will keep dropping. When enough people think that way, it 
+becomes a self-fulfilling cycle: less buying, less confidence, lower prices, even less buying. 
+ 
+ 
+ 
+(Empty residential buildings in China's ghost cities. Source: Google, 微博) 
+The result is a strange and painful situation. There are millions of empty apartments across 
+China. At the same time, many people — especially young workers, migrants, and international 
+students,are struggling to find affordable and trustworthy housing in the cities where they 
+actually want to live. The supply exists. But the connection between available housing and the 
+people who need it is broken. 
+A big part of why that connection is broken is trust. Most existing Chinese housing platforms 
+are flooded with developer advertisements and inflated listings. There is very little honest, 
+community-sourced information about what it is actually like to live in a specific apartment or 
+neighborhood — especially from the perspective of foreigners, who face additional challenges 
+like language barriers and unfamiliarity with local systems. Many international students end 
+up finding housing through informal WeChat groups or by relying on whoever happens to help 
+them when they arrive, rather than through any organized or reliable source of information. 
+This platform is built to address that specific gap. It is not trying to fix the entire property crisis 
+— that would be unrealistic. But it aims to make one part of the problem smaller: helping 
+people who genuinely need housing find, evaluate, and trust th eir options through honest 
+community reviews and neighborhood ratings. 
+
+
+========== PAGE 4 ==========
+4 
+ 
+  
+ 
+(The collapse of major Chinese property developers 
+such as Evergrande. Source : Google 微博 ) 
+ 
+1.3  Why Is This Topic Worth Building? 
+ 
+It solves a real problem. 
+The housing information gap described above is happening right now. There is a clear group 
+of people — foreign students, young migrants, first -time renters — who do not have a good 
+way to find trusted housing information in China. This platform directly serves that group. 
+It is realistic to build. 
+The system does not require external APIs or complex integrations. All of its core features — 
+user registration, login, housing listings, reviews, ratings, and neighborhood pages — can be 
+built entirely with the technologies covered in this course, includi ng Servlet, JSP, EL 
+expressions, JSTL, JDBC, Filter, Session and Cookie management, and the five -tier 
+architecture pattern with a MySQL database. 
+It has genuine social value. 
+By helping people navigate the housing market more confidently, the platform contributes — 
+even in a small way — toward getting some of China's vacant housing stock into actual use. 
+Every person who finds a good apartment through honest community information is one fewer 
+empty unit sitting idle. 
+
+
+========== PAGE 5 ==========
+5 
+ 
+It is personally relevant. 
+This project was inspired by my own personal experience. As an international student living in 
+Nanjing, I have seen firsthand how difficult it is for foreigners to find reliable housing 
+information without local connections or language support. When I visi ted Shenzhen, I was 
+struck by how many fully built apartment buildings and commercial areas were standing almost 
+completely empty — a visible reminder of just how real this crisis is. That experience is what 
+gave this project its direction and purpose. 
+1.4  Research Orientation 
+This project sits at the intersection of two things: understanding a real social and economic 
+problem, and applying Java development skills to build something that responds to it. The goal 
+is to think through how software can be designed to serve people who are often left out of 
+existing platforms — in this case, foreigners trying to find their footing in a Chinese city during 
+a difficult period in the country's housing market. 
+The project also serves as a full demonstration of the J2EE technology stack studied throughout 
+this course, from basic HTTP and Servlet fundamentals through to layered backend architecture 
+and modern Spring Boot controller design. The aim is to build some thing that works well, 
+makes sense as a product, and reflects the kind of thinking that goes into real -world web 
+development. 
+  
+
+========== PAGE 6 ==========
+6 
+ 
+Chapter 2 — Research and Analysis of Similar Projects 
+2.1  Overview 
+To better understand what already exists in the housing platform space and where the gaps are, 
+three well-known platforms were researched and analyzed: Anjuke ( 安居客), Lianjia (链家), 
+and Trulia. These three were chosen because they are the most relevant comparisons to this 
+project — two from China and one from the West — and together they show both what current 
+solutions offer and what they are still missing. 
+2.2  Anjuke (安居客) 
+What It Is 
+Anjuke is one of China's biggest online real estate platforms, founded in 2007 and now owned 
+by 58.com. It covers new homes, second -hand homes, rental properties, and commercial real 
+estate all in one place. It is primarily used by Chinese buyers, renters, and real estate agents. 
+ 
+(Anjuke (安居客) website homepage and Wechat mini program) 
+ 
+Architectural Model 
+Anjuke most likely follows a standard MVC (Model-View-Controller) architecture at its core, 
+with a clear separation between the data layer, business logic, and front-end presentation. Given 
+its scale, it likely uses a microservices-based backend where different services handle listings, 
+search, user management, and payments independently. The front end is mobile -first, built as 
+a native app with a web platform running in parallel. 
+ 
+
+
+========== PAGE 7 ==========
+7 
+ 
+Core Features 
+• Millions of property listings searchable by city, price range, property type, and size 
+• High-resolution photos, floor plans, and detailed descriptions for each listing 
+• Price trend data and market analysis tools 
+• VR home viewing and 3D tours for new developments 
+• In-app messaging between users and landlords or agents 
+• Mobile-first design with a widely used Android and iOS app 
+What It Does Well 
+Anjuke is very strong at aggregating a huge volume of listings in one place and making them 
+easy to filter and browse. The search experience is smooth, and the amount of data available 
+— price history, area comparisons, neighborhood maps — is genuinely use ful for someone 
+who already knows what they are looking for. 
+What It Is Missing 
+The biggest weakness of Anjuke is that it is entirely driven by advertisers and real estate agents. 
+Almost all the content on the platform comes from developers and agents trying to sell or rent 
+properties, which means the information is naturally biased. There are no genuine community 
+reviews from tenants who have actually lived in these apartments. The platform is also entirely 
+in Chinese, with no English or multilingual support — making it essentially unusable for 
+international students and foreign workers without strong Mandarin skills. 
+2.3  Lianjia (链家) 
+What It Is 
+Lianjia was founded in 2001 in Beijing and has grown into China's leading real estate brokerage 
+brand. Unlike Anjuke, which is primarily a listings platform, Lianjia combines online listings 
+with an offline network of physical stores and trained agents. 
+
+========== PAGE 8 ==========
+8 
+ 
+ 
+(Lianjia (链家) website homepage) 
+ 
+Architectural Model 
+Lianjia most likely uses an Online-to-Offline (O2O) architecture, meaning its digital platform 
+is tightly integrated with its physical branch network. The backend follows a layered 
+architecture similar to the five -tier model — with a presentation layer, business logic layer, 
+data access layer, and database — extended with real-time agent coordination tools. Its parent 
+platform Beike (贝壳) acts as the broader ecosystem layer on top. 
+Core Features 
+• Verified property listings confirmed through agent inspection and ownership checks 
+• A large offline network of physical branches across major Chinese cities 
+• An Agent Cooperation Network (ACN) that allows agents to share commissions 
+• Transaction support tools including deposit guarantees and fund safekeeping 
+• Price trend data and market insights 
+What It Does Well 
+Lianjia's main strength is trust and verification. Unlike most listing platforms where anyone 
+can post anything, Lianjia has agents who physically inspect properties and verify ownership 
+before listings go live. Their transaction support features — like pr otecting deposits and 
+ensuring money is held safely during deals — also give users more confidence when making a 
+major purchase. 
+ 
+
+
+========== PAGE 9 ==========
+9 
+ 
+What It Is Missing 
+Lianjia is built around the buying and selling process, with professional agents at the center of 
+every interaction. This makes it less useful for ordinary renters who just want to find a decent 
+apartment. Like Anjuke, there is no space for community-sourced information. Tenants cannot 
+leave reviews about landlord behavior, an apartment's actual condition, or what daily life in a 
+neighborhood feels like. It is also entirely built for Chinese users, with no English interface or 
+foreigner-specific guidance. 
+2.4  Trulia (United States) 
+What It Is 
+Trulia is the largest real estate platform in the United States, launched in 2006. While it operates 
+in a completely different market from China, it is the most relevant international reference for 
+this project because it introduced community-based features into the housing search experience 
+— something that does not yet exist in China's housing platforms. 
+ 
+(Trulia website listings page) 
+Architectural Model 
+Trulia is also most likely uses a modern web architecture based on MVC principles, with a 
+React-based frontend communicating with RESTful backend services. At the data layer, it 
+combines a relational database for structured listing data with big data proce ssing tools for its 
+Zestimate pricing algorithm. Zillow Group’s acquisition of Trulia means the neighborhood 
+review features are served from a separate but integrated service. 
+ 
+
+
+========== PAGE 10 ==========
+10 
+ 
+Core Features 
+• A large searchable database of homes for sale, rent, and recently sold 
+• "Zestimate" — an AI-generated estimate of a property's current market value 
+• Interactive map-based search with filters for schools, transport, and nearby amenities 
+• Neighborhood insights including crime data, school ratings, and walkability scores 
+• User reviews from residents about their neighborhoods 
+• A community Q&A section where users can ask questions about specific areas 
+What It Does Well 
+Trulia’s most distinctive contribution is that it treats housing search as more than just a 
+transaction. Through neighborhood ratings, resident reviews, and community Q&A features, it 
+gives users a way to understand what it actually feels like to live some where — not just what 
+the listing says. This is the community layer that makes the platform significantly more useful 
+than a simple listings database. 
+What It Is Missing 
+Trulia was built for the American market and has no presence or relevance in China. Its 
+community review model — which is genuinely valuable — does not exist in any Chinese 
+housing platform. It also does not specifically address the needs of foreigners or international 
+users trying to navigate a new country. 
+ 
+2.5  Summary and Comparison 
+ 
+Feature Anjuke Lianjia Trulia This Project 
+Housing listings Yes Yes Yes Yes 
+Verified listings No Yes Partial Partial 
+Tenant / resident reviews No No Yes Yes 
+Neighborhood ratings No No Yes Yes 
+English / multilingual support No No English only Yes 
+Foreigner-focused features No No No Yes 
+Community-sourced content No No Partial Yes 
+Relevant to China's market Yes Yes No Yes 
+ 
+ 
+
+========== PAGE 11 ==========
+11 
+ 
+Key Takeaway 
+All three platforms do certain things well — Anjuke has the listings volume, Lianjia has the 
+verification and trust, and Trulia has the community review model. But none of them combine 
+all three, and none of them serve the specific group this project is built for: foreigners and 
+young people navigating China's housing market without local connections or Mandarin skills. 
+This is the gap that this project directly targets. 
+  
+
+========== PAGE 12 ==========
+12 
+ 
+Chapter 3 — Detailed Design of Personal Project Modules and Functions 
+3.1  Chosen Architecture Model 
+This project follows the Five -Tier Architecture pattern, which is the standard model taught 
+throughout this course. The five tiers are : 
+• View Layer (JSP / Thymeleaf) : the pages the user sees and interacts with in the browser 
+• Controller Layer (Servlet) : receives requests from the browser and decides what to do 
+with them 
+• Service Layer : handles all the business logic, validation, and rules 
+• DAO Layer (Data Access Object) : handles all direct communication with the database 
+• Database Layer (MySQL) : stores all the data permanently 
+This model is also consistent with the MVC (Model-View-Controller) design pattern, which is 
+one of the most widely used patterns in web development. In MVC terms, the JSP pages act as 
+the View, the Servlet acts as the Controller, and the Service + DAO layers together form the 
+Model. Entity classes serve as data carriers across all layers. 
+For one module (the Neighborhood Ratings feature), the project also uses Spring Boot with 
+Thymeleaf as a modern alternative to JSP, demonstrating the full range of technologies covered 
+in this course. 
+The execution flow for every user action follows this path: 
+JSP Page → Servlet → Service → DAO → MySQL → back up the same chain 
+
+========== PAGE 13 ==========
+13 
+ 
+ 
+(Five-Tier Architecture Flow) 
+ 
+3.2  Overall System Architecture 
+The platform consists of five main modules: 
+• User Module 
+• Housing Listings Module 
+• Reviews and Ratings Module 
+• Neighborhood Module 
+• Admin Module 
+Each module follows the same five-tier structure and connects to a shared MySQL database. 
+The diagram below shows how the modules relate to each other and to the shared database. 
+
+
+========== PAGE 14 ==========
+14 
+ 
+ 
+(System Module Overview) 
+ 
+3.3  Module 1 — User Module 
+Overview 
+The User Module handles everything related to user identity — registering a new account, 
+logging in, maintaining login state across pages, and logging out. This is the entry point for all 
+other features since most actions on the platform require the user to be logged in. 
+Core Functions 
+• User Registration — new users create an account with username, email, password, 
+nationality, and city 
+• User Login — registered users log in with their username and password 
+• Remember Me — users can stay logged in across browser sessions using a Cookie 
+• Login State Management — the user's identity is stored in a Session after login 
+• Logout — destroys the Session and clears the Remember Me Cookie 
+• Login Interception — a Filter redirects unauthenticated users to the login page 
+ 
+ 
+
+
+========== PAGE 15 ==========
+15 
+ 
+Implementation Logic 
+Registration uses a RegisterServlet that reads form parameters, calls UserService to validate 
+input and check for duplicate usernames, then calls UserDAO to insert the new user into the 
+database. Login uses a LoginServlet that verifies credentials through UserService and 
+UserDAO, then stores the user object in the HttpSession. The Remember Me feature sets a 
+Cookie with a 7-day expiry. A LoginFilter mapped to /* checks every incoming request for a 
+valid Session. Logout is handled by LogoutServlet which calls session.invalidate() and sets the 
+Cookie maxAge to 0. 
+Key Technologies 
+Servlet, HttpSession, Cookie, Filter, FilterChain, JSP, JDBC, DAO pattern, five-tier 
+architecture 
+Database Table 
+user (id, username, email, password, nationality, city, role, created_at)  
+ 
+3.4  Module 2 — Housing Listings Module 
+Overview 
+The Housing Listings Module is the core browsing experience. It allows users to view available 
+housing listings, search and filter by city, price range, and property type, and view the full 
+details of any listing they are interested in. 
+Core Functions 
+• Browse Listings — paginated list of all available housing listings 
+• Search and Filter — filter by city, price range, and property type 
+• Listing Detail Page — full details including description, address, price, and average 
+tenant rating 
+• Submit a Listing — registered users can submit a new housing listing 
+• My Listings — users can view and manage their own submitted listings 
+Implementation Logic 
+ListingServlet handles GET requests, reads filter parameters using getParameter(), and passes 
+them to ListingService. ListingService validates the filter inputs and calls ListingDAO with 
+the appropriate query parameters. ListingDAO builds a dynamic SQL que ry and returns a list 
+of Listing entity objects. The JSP view uses JSTL c:forEach to loop through the list and EL 
+
+========== PAGE 16 ==========
+16 
+ 
+expressions like ${listing.price} to display fields. Pagination is handled using SQL LIMIT and 
+OFFSET. 
+Key Technologies 
+Servlet (doGet, doPost), getParameter(), JSP, EL expressions, JSTL c:forEach, JDBC 
+PreparedStatement, DAO pattern, five-tier architecture 
+Database Table 
+listing (id, user_id, title, description, city, address, price, 
+property_type, created_at) 
+ 
+3.5  Module 3 — Reviews and Ratings Module 
+Overview 
+This is the most distinctive module of the platform. It allows tenants who have lived in a 
+property to leave an honest written review and a star rating (1 to 5). This community -sourced 
+layer is what separates this platform from existing Chinese housing apps. 
+Core Functions 
+• Submit a Review — logged-in users write a review and give a star rating for any 
+listing 
+• View Reviews — all reviews for a listing are displayed on its detail page, newest first 
+• Average Rating Display — each listing shows an automatically calculated average 
+star rating 
+• One Review Per User Per Listing — prevents spam and duplicate reviews 
+• Edit or Delete Own Review — users can update or remove their own reviews 
+Implementation Logic 
+ReviewServlet handles both GET (load reviews) and POST (submit review) requests. On POST, 
+it reads listing_id, rating, and review_text from the request, calls ReviewService to validate, 
+then ReviewDAO to insert. The average rating is calculated using SQL A VG(rating) grouped 
+by listing_id. The one-review-per-user check is enforced in ReviewService before allowing a 
+new submission. JSP displays reviews using c:forEach and shows star ratings using EL 
+expressions. 
+Key Technologies 
+Servlet (doGet, doPost), JSP, EL, JSTL, JDBC, DAO, SQL AVG() aggregation, Session for 
+user identity check 
+
+========== PAGE 17 ==========
+17 
+ 
+Database Table 
+review (id, listing_id, user_id, rating, review_text, created_at)  
+UNIQUE constraint on (listing_id, user_id) — one review per user per 
+listing 
+ 
+3.6  Module 4 — Neighborhood Module 
+Overview 
+The Neighborhood Module gives users a broader view of the areas where listings are located. 
+Instead of just evaluating a single apartment, users can explore an entire neighborhood — 
+reading community tips, checking liveability scores, and understanding wha t daily life in that 
+area is actually like. This module is implemented using Spring Boot and Thymeleaf. 
+Core Functions 
+• Neighborhood Profile Page — dedicated page per neighborhood with name, city, 
+description, and liveability score 
+• Liveability Ratings — users rate a neighborhood across four categories: safety, 
+transport, food access, and foreigner-friendliness 
+• Community Tips — users post short text tips about a neighborhood 
+• Listings in This Neighborhood — each neighborhood page also shows all related 
+housing listings 
+Implementation Logic 
+This module is built as a Spring Boot application with a NeighborhoodController using 
+@GetMapping and @PostMapping annotations. The controller calls NeighborhoodService, 
+which calls NeighborhoodRepository (DAO) to fetch data from MySQL. Thymeleaf templates 
+use th:each to loop through listings and tips, and th:text to display values. Liveability scores 
+are averaged across all user submissions per category. 
+Key Technologies 
+Spring Boot, @Controller, @GetMapping, @PostMapping, Model, Thymeleaf (th:each, 
+th:text, th:action), JDBC, DAO pattern 
+Database Tables 
+neighborhood (id, name, city, description) 
+neighborhood_rating (id, neighborhood_id, user_id, safety, transport, 
+food_access, foreigner_friendly) 
+neighborhood_tip (id, neighborhood_id, user_id, tip_text, created_at)  
+ 
+
+========== PAGE 18 ==========
+18 
+ 
+3.7  Module 5 — Admin Module 
+Overview 
+The Admin Module gives a designated administrator account the ability to manage the 
+platform's content — approving or removing listings, moderating reviews, and managing user 
+accounts. This ensures the platform stays clean and trustworthy for all users. 
+Core Functions 
+• Admin Login — admin is identified by a role flag in the database and redirected to the 
+admin dashboard after login 
+• Manage Listings — view all listings, approve pending ones, edit details, or delete 
+inappropriate ones 
+• Moderate Reviews — view all reviews and delete any that violate community 
+guidelines 
+• Manage Users — view all registered users and deactivate abusive accounts 
+• Dashboard Overview — shows key statistics: total users, listings, reviews, and pending 
+listings 
+Implementation Logic 
+Admin identity is stored in the user table with a role column set to "admin". After login, 
+LoginServlet checks the role and redirects to /admin/dashboard instead of the regular 
+homepage. An AdminFilter is mapped to /admin/* and checks that the current session user has 
+the admin role — any non -admin accessing /admin/* is immediately redirected. 
+AdminDashboardServlet queries summary counts and passes them to the dashboard JSP via 
+request.setAttribute(). Each admin management Servlet handles GET (list view) an d POST 
+(actions: delete, approve, deactivate) handlers. 
+Key Technologies 
+Servlet, AdminFilter on /admin/*, HttpSession role check, JSP, JSTL, EL, JDBC, DAO, five -
+tier architecture, request.setAttribute(), request forwarding 
+Database Addition 
+role VARCHAR(20) DEFAULT 'user'  — added to user table 
+Admin account seeded manually with role = 'admin' 
+ 
+ 
+ 
+ 
+
+========== PAGE 19 ==========
+19 
+ 
+3.8  Summary of All Database Tables 
+ 
+Table Module Purpose 
+user User Stores all registered user accounts 
+listing Housing Listings Stores all housing listings 
+review Reviews & Ratings Stores tenant reviews and star ratings 
+neighborhood Neighborhood Stores neighborhood profiles 
+neighborhood_rating Neighborhood Stores per-user liveability ratings 
+neighborhood_tip Neighborhood Stores community tips per neighborhood 
+ 
+3.9  Summary of Technology Mapping 
+ 
+J2EE Technology Where It Is Used 
+HTTP / Request-Response Every module — all user interactions go through HTTP 
+Servlet (doGet, doPost) All modules — core request handler for every feature 
+Servlet lifecycle & @WebServlet All Servlets use annotation-based configuration 
+getParameter / getParameterValues Login, Register, Search filters, Review submission 
+Request forwarding Admin dashboard passing data to JSP 
+Redirect (sendRedirect) After login, logout, and form submission success 
+Session + JSESSIONID User login state maintained across all pages 
+Cookie Remember Me feature in User Module 
+Filter + FilterChain LoginFilter (all pages) and AdminFilter (/admin/*) 
+web.xml filter order StaticFilter before LoginFilter before AdminFilter 
+JSP All view pages 
+EL Expressions (${...}) Displaying data in all JSP pages 
+JSTL (c:forEach, c:if) Looping listings, reviews, conditional display 
+JDBC + PreparedStatement All DAO classes for database operations 
+JdbcUtil / DAO pattern Shared utility class across all modules 
+Five-Tier Architecture Entire project structure 
+Spring Boot @Controller Neighborhood Module 
+Thymeleaf (th:each, th:text) Neighborhood Module view layer 
+MySQL All data storage 
+ 

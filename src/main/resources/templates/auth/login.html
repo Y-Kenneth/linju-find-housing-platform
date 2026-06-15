@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Login — Linju Find</title>
+    <link th:href="@{/css/style.css(v=3)}" rel="stylesheet">
+    <link th:href="@{/css/auth.css(v=3)}" rel="stylesheet">
+</head>
+<body class="lf-login">
+
+<div class="lf-auth-page lf-login">
+    <div class="lf-login-split">
+
+        <!-- LEFT: Login form -->
+        <div class="lf-login-form-panel">
+            <div class="lf-login-form-inner">
+                <div class="lf-card lf-auth-card">
+                    <div class="lf-login-form-logo-wrap">
+                        <img th:src="@{/images/Full logo.png}" alt="Linju Find — 邻居找房"
+                             class="lf-login-form-logo" width="360" height="360">
+                    </div>
+                    <h3>Welcome Back</h3>
+                    <div class="lf-divider"></div>
+
+                    <div class="lf-alert lf-alert--success" th:if="${param.registered}">
+                        Account created successfully. Please log in.
+                    </div>
+                    <div class="lf-alert lf-alert--error" th:if="${error}" th:text="${error}"></div>
+
+                    <form th:action="@{/login}" method="post">
+                        <div class="lf-form-group">
+                            <label class="lf-label" for="username">Username</label>
+                            <!-- Custom combobox: remembered usernames (from the 7-day cookie)
+                                 are offered via the chevron toggle / typing. -->
+                            <div class="lf-combo"
+                                 th:classappend="${rememberedUsernames != null and !rememberedUsernames.isEmpty()} ? 'lf-combo--has-options' : ''">
+                                <input class="lf-input" type="text" id="username" name="username"
+                                       th:value="${rememberedUsername}" required autocomplete="off"
+                                       aria-autocomplete="list" aria-expanded="false"
+                                       aria-controls="lfUserMenu">
+                                <button type="button" class="lf-combo__toggle" id="lfUserToggle"
+                                        th:if="${rememberedUsernames != null and !rememberedUsernames.isEmpty()}"
+                                        aria-label="Show remembered usernames" tabindex="-1">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+                                </button>
+                                <ul class="lf-combo__menu" id="lfUserMenu" role="listbox"
+                                    th:if="${rememberedUsernames != null and !rememberedUsernames.isEmpty()}">
+                                    <li class="lf-combo__option" role="option"
+                                        th:each="u : ${rememberedUsernames}" th:text="${u}">sophie</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="lf-form-group">
+                            <label class="lf-label" for="password">Password</label>
+                            <input class="lf-input" type="password" id="password" name="password"
+                                   required autocomplete="current-password">
+                        </div>
+                        <div class="lf-form-group" style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0;">
+                            <input type="checkbox" name="rememberMe" id="rememberMe"
+                                   style="accent-color: var(--gold-500); width:16px;height:16px;cursor:pointer;">
+                            <label for="rememberMe" style="font-size:0.82rem;color:var(--text-muted);cursor:pointer;">
+                                Remember Me (7 days)
+                            </label>
+                        </div>
+                        <div style="margin-top:1.75rem;">
+                            <button type="submit" class="lf-btn lf-btn--primary" style="width:100%;">
+                                Login
+                            </button>
+                        </div>
+                    </form>
+
+                    <p style="margin-top:1.75rem;font-size:0.85rem;text-align:center;">
+                        Don't have an account?
+                        <a th:href="@{/register}">Register here</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT: shared brand panel -->
+        <div th:replace="~{fragments/auth-brand :: brand}"></div>
+
+    </div>
+</div>
+
+<script th:src="@{/js/auth-marquee.js}"></script>
+<script th:src="@{/js/auth-username.js}"></script>
+<script th:src="@{/js/main.js(v=5)}"></script>
+</body>
+</html>

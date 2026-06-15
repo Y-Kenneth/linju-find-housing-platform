@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Post a Listing — Linju Find</title>
+    <link th:href="@{/css/style.css(v=3)}" rel="stylesheet">
+</head>
+<body>
+
+<nav class="lf-nav">
+    <a th:href="@{/listings}" class="lf-nav__brand">
+        <img th:src="@{/images/Navbar Wide Logo.png}" alt="Linju Find" class="lf-nav__brand-logo" width="140" height="46">
+    </a>
+    <ul class="lf-nav__links">
+        <li><a th:href="@{/listings}">← Listings</a></li>
+        <li><a th:href="@{/logout}" class="lf-nav__logout">Logout</a></li>
+    </ul>
+</nav>
+
+<div class="lf-page">
+    <div class="lf-page-header lf-reveal">
+        <p style="font-size:0.7rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--gold-500);">New Listing</p>
+        <h2>Post a Property</h2>
+        <div class="lf-divider"></div>
+        <p>Your listing will be reviewed by an admin before it appears publicly.</p>
+    </div>
+
+    <div class="lf-form-page lf-reveal lf-reveal--delay-1">
+        <div class="lf-card">
+            <form th:action="@{/listings/add}" method="post">
+                <div class="lf-form-group">
+                    <label class="lf-label" for="title">Title *</label>
+                    <input class="lf-input" type="text" id="title" name="title" required
+                           placeholder="e.g. Bright Studio near Nanjing University">
+                </div>
+                <div class="lf-form-group">
+                    <label class="lf-label" for="description">Description</label>
+                    <textarea class="lf-textarea" id="description" name="description" rows="4"
+                              placeholder="Describe the property — size, facilities, nearby amenities..."></textarea>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+                    <div class="lf-form-group">
+                        <label class="lf-label" for="city">City *</label>
+                        <input class="lf-input" type="text" id="city" name="city" required
+                               placeholder="e.g. Nanjing">
+                    </div>
+                    <div class="lf-form-group">
+                        <label class="lf-label" for="propertyType">Property Type *</label>
+                        <select class="lf-select" id="propertyType" name="propertyType" required>
+                            <option value="">Select type</option>
+                            <option value="apartment">Apartment</option>
+                            <option value="studio">Studio</option>
+                            <option value="shared">Shared Room</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="lf-form-group">
+                    <label class="lf-label" for="address">Address</label>
+                    <input class="lf-input" type="text" id="address" name="address"
+                           placeholder="e.g. 鼓楼区汉口路12号">
+                </div>
+                <div class="lf-form-group">
+                    <label class="lf-label" for="price">Monthly Rent (¥) *</label>
+                    <input class="lf-input" type="number" id="price" name="price"
+                           step="0.01" min="0" required placeholder="e.g. 2500">
+                </div>
+
+                <div class="lf-divider" style="margin:1.75rem 0 1.25rem;"></div>
+                <p style="font-size:0.7rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--gold-500);margin-bottom:0.35rem;">
+                    Contact Details
+                </p>
+                <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:1.1rem;">
+                    How should interested tenants reach you? Add at least one — these are shown on your listing.
+                </p>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+                    <div class="lf-form-group">
+                        <label class="lf-label" for="contactPhone">Phone Number</label>
+                        <input class="lf-input" type="tel" id="contactPhone" name="contactPhone"
+                               pattern="[0-9+\-\s]{6,20}" placeholder="e.g. 138 0013 8000">
+                    </div>
+                    <div class="lf-form-group">
+                        <label class="lf-label" for="contactWechat">WeChat ID</label>
+                        <input class="lf-input" type="text" id="contactWechat" name="contactWechat"
+                               maxlength="50" placeholder="e.g. linju_landlord">
+                    </div>
+                </div>
+                <div class="lf-form-group">
+                    <label class="lf-label" for="contactEmail">Email / QQ Mail</label>
+                    <input class="lf-input" type="email" id="contactEmail" name="contactEmail"
+                           th:value="${loginEmail}" readonly
+                           maxlength="100" placeholder="e.g. 123456789@qq.com">
+                </div>
+
+                <div style="margin-top:1.75rem;">
+                    <button type="submit" class="lf-btn lf-btn--primary">Submit Listing</button>
+                    <a th:href="@{/listings}" class="lf-btn lf-btn--ghost" style="margin-left:0.5rem;">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script th:src="@{/js/main.js(v=5)}"></script>
+</body>
+</html>

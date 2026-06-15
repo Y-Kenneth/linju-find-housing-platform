@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Register — Linju Find</title>
+    <link th:href="@{/css/style.css(v=3)}" rel="stylesheet">
+    <link th:href="@{/css/auth.css(v=3)}" rel="stylesheet">
+</head>
+<body class="lf-login">
+
+<div class="lf-auth-page lf-login">
+    <div class="lf-login-split">
+
+        <!-- LEFT: Register form -->
+        <div class="lf-login-form-panel">
+            <div class="lf-login-form-inner">
+                <div class="lf-card lf-auth-card">
+                    <div class="lf-login-form-logo-wide-wrap">
+                        <img th:src="@{/images/Navbar Wide Logo.png}" alt="Linju Find"
+                             class="lf-login-form-logo-wide" width="280" height="92">
+                    </div>
+                    <h3>Create an Account</h3>
+                    <div class="lf-divider"></div>
+
+                    <div class="lf-alert lf-alert--error" th:if="${error}" th:text="${error}"></div>
+
+                    <form th:action="@{/register}" method="post">
+                        <div class="lf-form-group">
+                            <label class="lf-label" for="username">Username *</label>
+                            <input class="lf-input" type="text" id="username" name="username"
+                                   required autocomplete="username">
+                        </div>
+                        <div class="lf-form-group">
+                            <label class="lf-label" for="email">Email *</label>
+                            <input class="lf-input" type="email" id="email" name="email"
+                                   required autocomplete="email">
+                        </div>
+                        <div class="lf-form-group">
+                            <label class="lf-label" for="password">Password *</label>
+                            <input class="lf-input" type="password" id="password" name="password"
+                                   required autocomplete="new-password">
+                        </div>
+                        <div class="lf-form-group">
+                            <label class="lf-label" for="nationality">Nationality</label>
+                            <input class="lf-input" type="text" id="nationality" name="nationality"
+                                   placeholder="e.g. Indonesian, Chinese, American">
+                        </div>
+                        <div class="lf-form-group">
+                            <label class="lf-label" for="city">City</label>
+                            <input class="lf-input" type="text" id="city" name="city"
+                                   placeholder="e.g. Nanjing, Shenzhen">
+                        </div>
+                        <div style="margin-top:1.75rem;">
+                            <button type="submit" class="lf-btn lf-btn--primary" style="width:100%;">
+                                Create Account
+                            </button>
+                        </div>
+                    </form>
+
+                    <p style="margin-top:1.75rem;font-size:0.85rem;text-align:center;">
+                        Already have an account?
+                        <a th:href="@{/login}">Login here</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT: shared brand panel -->
+        <div th:replace="~{fragments/auth-brand :: brand}"></div>
+
+    </div>
+</div>
+
+<script th:src="@{/js/auth-marquee.js}"></script>
+<script th:src="@{/js/main.js(v=5)}"></script>
+</body>
+</html>

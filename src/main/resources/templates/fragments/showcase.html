@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<body>
+
+<!--
+  Reusable property card for the login-page marquee.
+  Usage: th:insert="~{fragments/showcase :: mcard(${p})}"
+  where p is a com.linjufind.dto.ShowcaseListing.
+-->
+<th:block th:fragment="mcard(p)">
+    <div class="lf-mcard__img">
+        <img th:if="${p.imageUrl != null and !p.imageUrl.isEmpty()}"
+             th:src="${p.imageUrl}" th:alt="${p.title}">
+        <div th:unless="${p.imageUrl != null and !p.imageUrl.isEmpty()}" class="lf-mcard__ph" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 9.75L12 3l9 6.75V21a.75.75 0 01-.75.75H3.75A.75.75 0 013 21V9.75z"/><path stroke-linecap="round" stroke-linejoin="round" d="M9 21V12h6v9"/></svg>
+        </div>
+        <span class="lf-mcard__type" th:text="${p.propertyType}">apartment</span>
+    </div>
+    <div class="lf-mcard__body">
+        <div class="lf-mcard__title" th:text="${p.title}">Property title</div>
+        <div class="lf-mcard__meta">
+            <span class="lf-mcard__price"
+                  th:text="'¥' + ${#numbers.formatInteger(p.price, 1, 'COMMA')}">¥0</span>
+            <span th:if="${p.averageRating != null}" class="lf-mcard__rating">
+                <svg viewBox="0 0 24 24"><path d="M12 2l2.9 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77 5.82 21l1.18-6.88-5-4.87 7.1-1.01z"/></svg>
+                <span th:text="${#numbers.formatDecimal(p.averageRating, 1, 1)}">4.5</span>
+                <span class="lf-mcard__rating-count" th:text="'(' + ${p.reviewCount} + ')'">(0)</span>
+            </span>
+            <span th:if="${p.averageRating == null}" class="lf-mcard__rating--new">New</span>
+        </div>
+        <p th:if="${p.reviewSnippet != null}" class="lf-mcard__review"
+           th:text="'&#8220;' + ${p.reviewSnippet} + '&#8221;'">Review snippet</p>
+        <p th:unless="${p.reviewSnippet != null}" class="lf-mcard__review lf-mcard__review--empty">
+            No reviews yet — be the first.
+        </p>
+    </div>
+</th:block>
+
+</body>
+</html>

@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${neighborhood.name + ' — Linju Find'}"></title>
+    <link th:href="@{/css/style.css}" rel="stylesheet">
+</head>
+<body>
+
+<nav class="lf-nav">
+    <a th:href="@{/listings}" class="lf-nav__brand">
+        <img th:src="@{/images/Navbar Wide Logo.png}" alt="Linju Find" class="lf-nav__brand-logo" width="140" height="46">
+    </a>
+    <ul class="lf-nav__links">
+        <li><a th:href="@{/neighborhoods}">← Neighborhoods</a></li>
+        <li><a th:href="@{/listings}">Listings</a></li>
+        <li th:if="${session.loginUser.role == 'admin'}"><a th:href="@{/admin/dashboard}" style="color:var(--gold-400);font-weight:600;">Admin Panel</a></li>
+        <li><a th:href="@{/logout}" class="lf-nav__logout">Logout</a></li>
+    </ul>
+</nav>
+
+<div class="lf-page">
+    <div style="max-width:1100px;margin:0 auto;padding:2rem;display:grid;grid-template-columns:1fr 360px;gap:2rem;align-items:start;">
+
+        <!-- Left: info + rating form + tips -->
+        <div>
+            <div class="lf-reveal">
+                <p style="font-size:0.7rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--gold-500);margin-bottom:0.4rem;"
+                   th:text="${neighborhood.city}"></p>
+                <h2 th:text="${neighborhood.name}"></h2>
+                <div class="lf-divider"></div>
+                <p th:text="${neighborhood.description}"></p>
+            </div>
+
+            <hr>
+
+            <!-- Rate form -->
+            <div class="lf-card lf-reveal lf-reveal--delay-1" style="margin-top:1.5rem;">
+                <h3 th:text="${userRating == null} ? 'Rate This Neighborhood' : 'Update Your Rating'"></h3>
+                <div class="lf-divider"></div>
+
+                <form th:action="@{/neighborhoods/rate/{id}(id=${neighborhood.id})}" method="post">
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+                        <div class="lf-form-group">
+                            <label class="lf-label" for="safety">Safety</label>
+                            <select class="lf-select" id="safety" name="safety" required>
+                                <option value="">-</option>
+                                <option value="5" th:selected="${userRating != null and userRating.safety == 5}">5 — Excellent</option>
+                                <option value="4" th:selected="${userRating != null and userRating.safety == 4}">4 — Good</option>
+                                <option value="3" th:selected="${userRating != null and userRating.safety == 3}">3 — Average</option>
+                                <option value="2" th:selected="${userRating != null and userRating.safety == 2}">2 — Poor</option>
+                                <option value="1" th:selected="${userRating != null and userRating.safety == 1}">1 — Terrible</option>
+                            </select>
+                        </div>
+                        <div class="lf-form-group">
+                            <label class="lf-label" for="transport">Transport</label>
+                            <select class="lf-select" id="transport" name="transport" required>
+                                <option value="">-</option>
+                                <option value="5" th:selected="${userRating != null and userRating.transport == 5}">5 — Excellent</option>
+                                <option value="4" th:selected="${userRating != null and userRating.transport == 4}">4 — Good</option>
+                                <option value="3" th:selected="${userRating != null and userRating.transport == 3}">3 — Average</option>
+                                <option value="2" th:selected="${userRating != null and userRating.transport == 2}">2 — Poor</option>
+                                <option value="1" th:selected="${userRating != null and userRating.transport == 1}">1 — Terrible</option>
+                            </select>
+                        </div>
+                        <div class="lf-form-group">
+                            <label class="lf-label" for="foodAccess">Food Access</label>
+                            <select class="lf-select" id="foodAccess" name="foodAccess" required>
+                                <option value="">-</option>
+                                <option value="5" th:selected="${userRating != null and userRating.foodAccess == 5}">5 — Excellent</option>
+                                <option value="4" th:selected="${userRating != null and userRating.foodAccess == 4}">4 — Good</option>
+                                <option value="3" th:selected="${userRating != null and userRating.foodAccess == 3}">3 — Average</option>
+                                <option value="2" th:selected="${userRating != null and userRating.foodAccess == 2}">2 — Poor</option>
+                                <option value="1" th:selected="${userRating != null and userRating.foodAccess == 1}">1 — Terrible</option>
+                            </select>
+                        </div>
+                        <div class="lf-form-group">
+                            <label class="lf-label" for="foreignerFriendly">Foreigner-Friendly</label>
+                            <select class="lf-select" id="foreignerFriendly" name="foreignerFriendly" required>
+                                <option value="">-</option>
+                                <option value="5" th:selected="${userRating != null and userRating.foreignerFriendly == 5}">5 — Excellent</option>
+                                <option value="4" th:selected="${userRating != null and userRating.foreignerFriendly == 4}">4 — Good</option>
+                                <option value="3" th:selected="${userRating != null and userRating.foreignerFriendly == 3}">3 — Average</option>
+                                <option value="2" th:selected="${userRating != null and userRating.foreignerFriendly == 2}">2 — Poor</option>
+                                <option value="1" th:selected="${userRating != null and userRating.foreignerFriendly == 1}">1 — Terrible</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div style="margin-top:1.25rem;">
+                        <button type="submit" class="lf-btn lf-btn--primary"
+                                th:text="${userRating == null} ? 'Submit Rating' : 'Update Rating'"></button>
+                    </div>
+                </form>
+            </div>
+
+            <hr style="margin-top:2rem;">
+
+            <!-- Community tips -->
+            <div style="margin-top:1.5rem;" class="lf-reveal lf-reveal--delay-2">
+                <h3 style="margin-bottom:1rem;">Community Tips</h3>
+
+                <div class="lf-card" style="margin-bottom:1.25rem;">
+                    <form th:action="@{/neighborhoods/tip/{id}(id=${neighborhood.id})}" method="post">
+                        <div class="lf-form-group">
+                            <label class="lf-label" for="tipText">Share a Local Tip</label>
+                            <textarea class="lf-textarea" id="tipText" name="tipText" rows="3" required
+                                      placeholder="Markets, transport tricks, things to watch out for..."></textarea>
+                        </div>
+                        <button type="submit" class="lf-btn lf-btn--outline lf-btn--sm">Post Tip</button>
+                    </form>
+                </div>
+
+                <div th:if="${tips.isEmpty()}">
+                    <p>No community tips yet. Share something useful!</p>
+                </div>
+
+                <div th:each="tip : ${tips}" class="lf-tip-card lf-reveal">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.2rem;">
+                        <strong style="font-size:0.85rem;" th:text="${tip.username}"></strong>
+                        <small th:text="${tip.createdAt}"></small>
+                    </div>
+                    <p th:text="${tip.tipText}"></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right: scores panel -->
+        <div>
+            <div class="lf-card lf-reveal" style="position:sticky;top:calc(var(--navbar-h) + 1.5rem);">
+                <p style="font-size:0.68rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--text-muted);margin-bottom:1rem;">
+                    Liveability Scores
+                </p>
+
+                <div th:if="${neighborhood.avgSafety != null}">
+                    <!-- Overall ring -->
+                    <div style="display:flex;justify-content:center;margin-bottom:1.5rem;">
+                        <div class="lf-score-ring"
+                             style="width:96px;height:96px;"
+                             th:data-score="${(neighborhood.avgSafety + neighborhood.avgTransport + neighborhood.avgFoodAccess + neighborhood.avgForeignerFriendly) / 4}">
+                            <svg viewBox="0 0 96 96" width="96" height="96">
+                                <circle class="lf-score-ring__track" cx="48" cy="48" r="40"/>
+                                <circle class="lf-score-ring__fill"  cx="48" cy="48" r="40"
+                                        style="stroke-dasharray:251.3;stroke-dashoffset:251.3;stroke-width:6;"/>
+                            </svg>
+                            <div class="lf-score-ring__label" style="font-size:1.4rem;">
+                                <span th:text="${#numbers.formatDecimal((neighborhood.avgSafety + neighborhood.avgTransport + neighborhood.avgFoodAccess + neighborhood.avgForeignerFriendly) / 4, 1, 1)}"></span>
+                                <small style="font-size:0.6rem;">overall</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Individual scores -->
+                    <div style="display:flex;flex-direction:column;gap:0.75rem;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.82rem;">
+                            <span style="color:var(--text-muted);">Safety</span>
+                            <span style="font-family:'Cinzel',serif;color:var(--gold-400);"
+                                  th:text="${#numbers.formatDecimal(neighborhood.avgSafety, 1, 1)} + ' / 5'"></span>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.82rem;">
+                            <span style="color:var(--text-muted);">Transport</span>
+                            <span style="font-family:'Cinzel',serif;color:var(--gold-400);"
+                                  th:text="${#numbers.formatDecimal(neighborhood.avgTransport, 1, 1)} + ' / 5'"></span>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.82rem;">
+                            <span style="color:var(--text-muted);">Food Access</span>
+                            <span style="font-family:'Cinzel',serif;color:var(--gold-400);"
+                                  th:text="${#numbers.formatDecimal(neighborhood.avgFoodAccess, 1, 1)} + ' / 5'"></span>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.82rem;">
+                            <span style="color:var(--text-muted);">Foreigner-Friendly</span>
+                            <span style="font-family:'Cinzel',serif;color:var(--gold-400);"
+                                  th:text="${#numbers.formatDecimal(neighborhood.avgForeignerFriendly, 1, 1)} + ' / 5'"></span>
+                        </div>
+                        <hr>
+                        <div th:if="${scoreTree != null and scoreTree.score > 0}"
+                             style="display:flex;justify-content:space-between;align-items:center;font-size:0.85rem;">
+                            <strong>Overall Liveability</strong>
+                            <span style="font-family:'Cinzel',serif;font-size:1rem;color:var(--gold-300);"
+                                  th:text="${#numbers.formatDecimal(scoreTree.score, 1, 1)} + ' / 5'"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div th:if="${neighborhood.avgSafety == null}">
+                    <p style="font-size:0.82rem;text-align:center;padding:1rem 0;">
+                        No ratings yet.<br>Be the first to rate this neighborhood!
+                    </p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script th:src="@{/js/main.js(v=5)}"></script>
+</body>
+</html>

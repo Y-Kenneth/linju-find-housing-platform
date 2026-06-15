@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${listing.title + ' — Linju Find'}"></title>
+    <link th:href="@{/css/style.css(v=4)}" rel="stylesheet">
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="lf-nav">
+    <a th:href="@{/listings}" class="lf-nav__brand">
+        <img th:src="@{/images/Navbar Wide Logo.png}" alt="Linju Find" class="lf-nav__brand-logo" width="140" height="46">
+    </a>
+    <ul class="lf-nav__links">
+        <li><a th:href="@{/listings}">← Listings</a></li>
+        <li th:if="${session.loginUser.role == 'admin'}"><a th:href="@{/admin/dashboard}" style="color:var(--gold-400);font-weight:600;">Admin Panel</a></li>
+        <li><a th:href="@{/logout}" class="lf-nav__logout">Logout</a></li>
+    </ul>
+</nav>
+
+<div class="lf-page">
+    <div class="lf-detail-grid">
+
+        <!-- Left column: 3D viewer + info -->
+        <div>
+            <!-- 360° room viewer -->
+            <div class="lf-room-canvas-wrap lf-reveal">
+                <canvas id="lf-room-canvas"></canvas>
+                <div class="lf-room-hint">Drag to explore &bull; 360°</div>
+            </div>
+
+            <!-- Listing info -->
+            <div style="margin-top:1.75rem;">
+                <p style="font-size:0.7rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--gold-500);margin-bottom:0.5rem;"
+                   th:text="${listing.propertyType}"></p>
+                <h2 th:text="${listing.title}"></h2>
+
+                <div class="lf-detail-price-badge">
+                    ¥<span th:text="${listing.price}"></span>
+                    <small>/month</small>
+                </div>
+
+                <div class="lf-detail-meta">
+                    <div class="lf-detail-meta-item">
+                        <strong>City:</strong>
+                        <span th:text="${cityHanzi != null} ? ${listing.city + ' · ' + cityHanzi} : ${listing.city}"></span>
+                    </div>
+                    <div class="lf-detail-meta-item">
+                        <strong>Address:</strong>
+                        <span th:text="${listing.address}"></span>
+                    </div>
+                </div>
+
+                <p th:text="${listing.description}" style="margin-top:0.75rem;line-height:1.75;"></p>
+            </div>
+
+            <hr>
+
+            <!-- Reviews section -->
+            <div style="margin-top:1.5rem;">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+                    <h3>Tenant Reviews</h3>
+                    <div th:if="${existingReview == null and session.loginUser.role != 'admin'}">
+                        <a th:href="@{/reviews/add/{id}(id=${listing.id})}"
+                           class="lf-btn lf-btn--outline lf-btn--sm">Write a Review</a>
+                    </div>
+                    <div th:if="${existingReview != null and session.loginUser.role != 'admin'}">
+                        <a th:href="@{/reviews/edit/{id}(id=${existingReview.id})}"
+                           class="lf-btn lf-btn--ghost lf-btn--sm">Edit Your Review</a>
+                    </div>
+                </div>
+
+                <div th:if="${reviews.isEmpty()}" class="lf-card">
+                    <p>No reviews yet. Be the first to share your experience!</p>
+                </div>
+
+                <div class="lf-review-list">
+                    <div th:each="review : ${reviews}" class="lf-card lf-review-card lf-reveal">
+                        <div class="lf-review-card__header">
+                            <div>
+                                <div class="lf-review-card__author" th:text="${review.username}"></div>
+                                <div class="lf-stars" th:data-stars="${review.rating}"></div>
+                            </div>
+                            <div style="display:flex;align-items:center;gap:0.75rem;">
+                                <span class="lf-review-card__date" th:text="${review.createdAt}"></span>
+                                <form th:if="${session.loginUser != null and session.loginUser.id == review.userId}"
+                                      th:action="@{/reviews/delete/{id}(id=${review.id})}" method="post"
+                                      style="display:inline">
+                                    <button type="submit" class="lf-btn lf-btn--danger lf-btn--sm"
+                                            data-confirm="Delete this review?">Delete</button>
+                                </form>
+                            </div>
+                        </div>
+                        <p class="lf-review-card__text" th:text="${review.reviewText}"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right column: rating summary -->
+        <div>
+            <div class="lf-card lf-reveal">
+                <p style="font-size:0.68rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--text-muted);margin-bottom:0.75rem;">
+                    Community Score
+                </p>
+
+                <div th:if="${listing.averageRating != null}"
+                     style="display:flex;align-items:baseline;gap:0.5rem;margin-bottom:0.5rem;">
+                    <span class="lf-rating-score"
+                          th:text="${#numbers.formatDecimal(listing.averageRating, 1, 1)}"></span>
+                    <span style="font-size:0.8rem;color:var(--text-muted);">/ 5</span>
+                </div>
+                <div th:if="${listing.averageRating != null}">
+                    <div class="lf-stars" th:data-stars="${listing.averageRating}"></div>
+                    <p style="margin-top:0.5rem;font-size:0.78rem;">
+                        Based on <span th:text="${listing.reviewCount}"></span> review(s)
+                    </p>
+                </div>
+                <div th:if="${listing.averageRating == null}">
+                    <p style="font-size:0.82rem;">No ratings yet</p>
+                </div>
+
+                <hr style="margin:1.25rem 0;">
+
+                <div style="font-size:0.78rem;color:var(--text-muted);line-height:2;">
+                    <div>
+                        <span style="color:var(--text-secondary);font-weight:500;">City</span><br>
+                        <span th:text="${cityHanzi != null} ? ${listing.city + ' · ' + cityHanzi} : ${listing.city}"></span>
+                    </div>
+                    <div style="margin-top:0.75rem;">
+                        <span style="color:var(--text-secondary);font-weight:500;">Type</span><br>
+                        <span th:text="${listing.propertyType}"></span>
+                    </div>
+                    <div style="margin-top:0.75rem;">
+                        <span style="color:var(--text-secondary);font-weight:500;">Address</span><br>
+                        <span th:text="${listing.address}"></span>
+                    </div>
+                </div>
+
+                <div style="margin-top:1.5rem;" th:if="${existingReview == null and session.loginUser.role != 'admin'}">
+                    <a th:href="@{/reviews/add/{id}(id=${listing.id})}"
+                       class="lf-btn lf-btn--primary" style="width:100%;justify-content:center;">
+                        Write a Review
+                    </a>
+                </div>
+            </div>
+
+            <!-- Contact the owner — mirrors the Community Score meta layout:
+                 label on top, value beneath. Missing channels fall back to "-". -->
+            <div class="lf-card lf-reveal" style="margin-top:1.5rem;">
+                <p style="font-size:0.68rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--text-muted);margin-bottom:0.75rem;">
+                    Contact the Owner
+                </p>
+
+                <div style="font-size:0.78rem;color:var(--text-muted);line-height:2;">
+                    <div>
+                        <span style="color:var(--text-secondary);font-weight:500;">Phone Number · 手机号</span><br>
+                        <a th:if="${listing.contactPhone != null and !listing.contactPhone.isEmpty()}"
+                           class="lf-contact-value" th:href="'tel:' + ${listing.contactPhone}"
+                           th:text="${listing.contactPhone}"></a>
+                        <span th:unless="${listing.contactPhone != null and !listing.contactPhone.isEmpty()}">-</span>
+                    </div>
+                    <div style="margin-top:0.75rem;">
+                        <span style="color:var(--text-secondary);font-weight:500;">WeChat ID · 微信号码</span><br>
+                        <span th:if="${listing.contactWechat != null and !listing.contactWechat.isEmpty()}"
+                              th:text="${listing.contactWechat}"></span>
+                        <span th:unless="${listing.contactWechat != null and !listing.contactWechat.isEmpty()}">-</span>
+                    </div>
+                    <div style="margin-top:0.75rem;">
+                        <span style="color:var(--text-secondary);font-weight:500;">Email / QQ Mail · 电子邮箱</span><br>
+                        <a th:if="${listing.contactEmail != null and !listing.contactEmail.isEmpty()}"
+                           class="lf-contact-value" th:href="'mailto:' + ${listing.contactEmail}"
+                           th:text="${listing.contactEmail}"></a>
+                        <span th:unless="${listing.contactEmail != null and !listing.contactEmail.isEmpty()}">-</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script th:src="@{/js/main.js(v=5)}"></script>
+<script th:src="@{/js/three-room.js}"></script>
+</body>
+</html>

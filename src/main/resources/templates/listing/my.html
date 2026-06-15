@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>My Listings — Linju Find</title>
+    <link th:href="@{/css/style.css(v=3)}" rel="stylesheet">
+</head>
+<body>
+
+<nav class="lf-nav">
+    <a th:href="@{/listings}" class="lf-nav__brand">
+        <img th:src="@{/images/Navbar Wide Logo.png}" alt="Linju Find" class="lf-nav__brand-logo" width="140" height="46">
+    </a>
+    <ul class="lf-nav__links">
+        <li><a th:href="@{/listings}">Browse</a></li>
+        <li><a th:href="@{/listings/add}">Post a Listing</a></li>
+        <li><a th:href="@{/logout}" class="lf-nav__logout">Logout</a></li>
+    </ul>
+</nav>
+
+<div class="lf-page">
+    <div class="lf-page-header lf-reveal">
+        <p style="font-size:0.7rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--gold-500);">Account</p>
+        <h2>My Listings</h2>
+        <div class="lf-divider"></div>
+    </div>
+
+    <div class="lf-my-listings">
+        <div th:if="${listings.isEmpty()}" class="lf-card lf-reveal">
+            <p>You have not posted any listings yet.</p>
+            <a th:href="@{/listings/add}" class="lf-btn lf-btn--primary" style="margin-top:1rem;">Post a Listing</a>
+        </div>
+
+        <div th:each="listing : ${listings}"
+             class="lf-card lf-my-listing-row lf-reveal">
+            <div class="lf-my-listing-row__info">
+                <div style="font-size:0.68rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--gold-500);margin-bottom:0.3rem;"
+                     th:text="${listing.propertyType}"></div>
+                <h3 style="font-size:1rem;margin-bottom:0.4rem;" th:text="${listing.title}"></h3>
+                <div style="display:flex;gap:1rem;flex-wrap:wrap;font-size:0.8rem;color:var(--text-muted);">
+                    <span th:text="${listing.city}"></span>
+                    <span>¥<span th:text="${listing.price}"></span>/mo</span>
+                    <span th:classappend="${listing.status == 'approved'} ? 'lf-badge lf-badge--approved' : 'lf-badge lf-badge--pending'"
+                          th:text="${listing.status}"></span>
+                </div>
+            </div>
+            <div class="lf-my-listing-row__actions">
+                <a th:href="@{/listings/{id}(id=${listing.id})}"
+                   class="lf-btn lf-btn--outline lf-btn--sm">View</a>
+                <form th:action="@{/listings/delete/{id}(id=${listing.id})}" method="post" style="display:inline">
+                    <button type="submit" class="lf-btn lf-btn--danger lf-btn--sm"
+                            data-confirm="Delete this listing? This cannot be undone.">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script th:src="@{/js/main.js(v=5)}"></script>
+</body>
+</html>

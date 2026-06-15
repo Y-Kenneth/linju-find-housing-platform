@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<body>
+
+<!--
+  Shared auth brand panel (right side of the login & register split-screen).
+  Usage: <div th:replace="~{fragments/auth-brand :: brand}"></div>
+  Expects model attributes: statCities, statListings, statReviews,
+  topCities, showcaseListings.
+-->
+<div class="lf-login-brand-panel" th:fragment="brand">
+
+    <div class="lf-login-brand-top">
+        <div class="lf-login-brand-inner">
+            <div class="lf-login-hero">
+                <span class="lf-login-eyebrow">Community Housing</span>
+                <h2 class="lf-login-headline">Find your place,<br>through your community.</h2>
+                <div class="lf-login-subslogan">
+                    <p>
+                        <span class="lf-login-subslogan__lead">Honest reviews - Trusted neighbors - Housing that feels like home</span>
+                    </p>
+                </div>
+            </div>
+
+            <div class="lf-login-stats">
+                <div class="lf-login-stat">
+                    <span class="lf-login-stat__num" th:text="${statCities}">0</span>
+                    <span class="lf-login-stat__label">Cities</span>
+                </div>
+                <div class="lf-login-stat">
+                    <span class="lf-login-stat__num" th:text="${statListings}">0</span>
+                    <span class="lf-login-stat__label">Listings</span>
+                </div>
+                <div class="lf-login-stat">
+                    <span class="lf-login-stat__num" th:text="${statReviews}">0</span>
+                    <span class="lf-login-stat__label">Reviews</span>
+                </div>
+            </div>
+
+            <div class="lf-login-cities" th:if="${topCities != null and !topCities.isEmpty()}">
+                <span class="lf-login-cities__label">Popular cities</span>
+                <div class="lf-login-cities__list">
+                    <span th:each="c : ${topCities}" class="lf-login-city-chip">
+                        <span th:if="${cityHanzi != null and cityHanzi.containsKey(c)}"
+                              class="lf-login-city-chip__hanzi" th:text="${cityHanzi.get(c)}">北京</span>
+                        <span class="lf-login-city-chip__en" th:text="${c}">Beijing</span>
+                    </span>
+                </div>
+            </div>
+
+            <div class="lf-login-features">
+                <div class="lf-login-feature">
+                    <span class="lf-login-feature__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="m9 10 1.5 1.5L14 8"/></svg>
+                    </span>
+                    <div>
+                        <p class="lf-login-feature__title">Honest reviews</p>
+                        <p class="lf-login-feature__desc">Real experiences from people who actually lived there — no filters.</p>
+                    </div>
+                </div>
+                <div class="lf-login-feature">
+                    <span class="lf-login-feature__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"/><path d="M17 11a3 3 0 1 0 0-6"/><path d="M2 21v-1a6 6 0 0 1 6-6h2a6 6 0 0 1 6 6v1"/><path d="M19 14a6 6 0 0 1 3 5v1"/></svg>
+                    </span>
+                    <div>
+                        <p class="lf-login-feature__title">Trusted neighbors</p>
+                        <p class="lf-login-feature__desc">A verified community you can rely on before signing anything.</p>
+                    </div>
+                </div>
+                <div class="lf-login-feature">
+                    <span class="lf-login-feature__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 21v-7h6v7"/></svg>
+                    </span>
+                    <div>
+                        <p class="lf-login-feature__title">Feels like home</p>
+                        <p class="lf-login-feature__desc">Find a place that matches your lifestyle, not just your budget.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Property marquee — only rendered when there are listings to show -->
+    <div class="lf-login-marquee-section"
+         th:if="${showcaseListings != null and !showcaseListings.isEmpty()}">
+        <div class="lf-login-marquee-head"><span>Recently listed</span></div>
+        <div class="lf-login-marquee" id="lfMarquee">
+            <div class="lf-login-marquee__track" id="lfMarqueeTrack">
+                <!-- Copy 1 -->
+                <th:block th:each="p : ${showcaseListings}">
+                    <div class="lf-mcard" th:insert="~{fragments/showcase :: mcard(${p})}"></div>
+                </th:block>
+                <!-- Copy 2 — duplicate for a seamless loop (decorative, hidden from AT) -->
+                <th:block th:each="p : ${showcaseListings}">
+                    <div class="lf-mcard" aria-hidden="true" th:insert="~{fragments/showcase :: mcard(${p})}"></div>
+                </th:block>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+</body>
+</html>
