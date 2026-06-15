@@ -1,5 +1,4 @@
 # Linju Find — Design Patterns Reference
-*10 GoF Design Patterns implemented in this project. Read this once and you can explain every pattern to your lecturer.*
 
 ---
 
@@ -64,18 +63,8 @@ src/main/java/com/linjufind/pattern/
 | 6 | Composite | Structural | `NeighborhoodScoreComposite` computes overall liveability from 4 sub-scores |
 | 7 | Observer | Behavioral | Admin approval fires events to 2 independent observers |
 | 8 | Command | Behavioral | Admin actions are objects — stored in a stack and undoable |
-| 9 | Strategy | Behavioral | Filter algorithms (city / price / type) are swappable |
+| 9 | Strategy | Behavioral | Filter algorithms (city / price / type) are swappable at runtime |
 | 10 | Template Method | Behavioral | `BaseDao.findAll()` skeleton — subclasses fill in SQL + row mapping |
-
----
-
-## How to Read Each Pattern Below
-
-Every pattern entry has the same structure:
-1. **What is it** — one simple sentence definition
-2. **The problem without it** — what the code would look like without this pattern
-3. **How it works in this project** — exact workflow, class by class
-4. **What your lecturer will ask** — anticipated questions and your answers
 
 ---
 
@@ -83,25 +72,18 @@ Every pattern entry has the same structure:
 **Category:** Creational
 
 ### What is it
-A class that can only ever have **one instance**. Everyone who needs it calls `getInstance()` and gets the same object.
+A class that can only ever have one instance. No matter how many times you ask for it, you always get the same object back.
 
-### The problem without it
-Without a Singleton, every DAO could create its own database connection object. A database connection pool is an expensive resource — creating multiple instances wastes memory and can exhaust the connection pool under load. All DAOs should share one single managed instance.
+**Real-world example:** A restaurant has one shared cash register. Every cashier uses that same register — nobody brings their own. If each cashier had their own register, the sales records would be split and inconsistent.
 
-### How it works in this project
+### What it does in this project
+`DatabaseManager` wraps the database connection pool (JdbcTemplate) and ensures the entire application shares one instance of it. Creating multiple database connection wrappers would waste memory and risk inconsistent behavior.
 
-**Step 1 — Private constructor**
+### How it works
 ```java
-// DatabaseManager.java
 private DatabaseManager(DataSource dataSource) {
     setupDatabaseConnection(dataSource);
 }
-```
-Nobody outside the class can call `new DatabaseManager()`. The only way to get an instance is through `initialize()` or `getInstance()`.
-
-**Step 2 — Synchronized `getInstance()`**
-```java
-private static DatabaseManager instance;
 
 public static synchronized DatabaseManager initialize(DataSource dataSource) {
     if (instance == null) {
@@ -113,32 +95,18 @@ public static synchronized DatabaseManager initialize(DataSource dataSource) {
 public static synchronized DatabaseManager getInstance() {
     return instance;
 }
-```
-`synchronized` ensures only one thread can create the instance at a time. `initialize()` is called once at startup by `DatabaseConfig`. After that, every DAO calls `getInstance()` to get the same object.
-
-**Step 3 — Wraps the database connection**
-```java
-private void setupDatabaseConnection(DataSource dataSource) {
-    this.connection = new JdbcTemplate(dataSource);
-}
 
 public JdbcTemplate getConnection() {
     return connection;
 }
 ```
+- The constructor is private — nobody can call `new DatabaseManager()` from outside.
+- `initialize()` is called once at startup by `DatabaseConfig`. It creates the single instance.
+- `getInstance()` is called by any class that needs it — always returns the same object.
+- Every DAO receives `DatabaseManager` and calls `getConnection()` to get the shared `JdbcTemplate`.
 
-**Step 4 — Used in every DAO**
-```java
-// BaseDao.java
-public BaseDao(DatabaseManager databaseManager) {
-    this.jdbcTemplate = databaseManager.getConnection();
-}
-```
-Every DAO receives the single `DatabaseManager` instance and calls `getConnection()` to get the shared `JdbcTemplate`. The Singleton is explicitly visible in every DAO constructor.
-
-### What your lecturer will ask
-- *"Why not just let Spring inject JdbcTemplate directly?"* — Spring could handle this automatically, but then the Singleton pattern would be invisible in the code. Writing `DatabaseManager` manually makes the pattern explicit and traceable.
-- *"Why is `getInstance()` synchronized?"* — To prevent two threads from both reading `instance == null` at the same time and each creating a separate instance.
+### Without it
+Every DAO would create its own database connection object independently. There would be no guarantee they all share the same pool, and the pattern would be invisible in the code.
 
 ---
 
@@ -146,22 +114,14 @@ Every DAO receives the single `DatabaseManager` instance and calls `getConnectio
 **Category:** Creational
 
 ### What is it
-A class with a **static method that builds objects** for you. You tell it what you want; it figures out how to create it correctly.
+A class with a static method that builds objects for you — including validation — so every caller gets a correctly constructed object without writing the same checks themselves.
 
-### The problem without it
-Before Factory, `ReviewService` created a `Review` like this:
-```java
-Review review = new Review();
-review.setListingId(listingId);
-review.setUserId(userId);
-review.setRating(rating);
-review.setReviewText(reviewText);
-```
-No validation. Any caller could pass rating = 0 or an empty text. If a second piece of code ever needed to create a `Review`, it would copy-paste this block — including forgetting the validation.
+**Real-world example:** A coffee machine is a factory. You press one button and it measures the water, grinds the beans, and brews the coffee correctly. You don't do each step yourself — the machine handles it the same way every time.
 
-### How it works in this project
+### What it does in this project
+When a user submits a review, `ReviewFactory.createReview()` validates the rating (must be 1–5) and ensures the review text is not blank before assembling the `Review` object. `ReviewService` calls it instead of building the object manually.
 
-**`ReviewFactory.createReview()`** — the only place a `Review` is ever built:
+### How it works
 ```java
 public static Review createReview(int listingId, int userId, int rating, String reviewText) {
     if (rating < 1 || rating > 5)
@@ -178,24 +138,14 @@ public static Review createReview(int listingId, int userId, int rating, String 
 }
 ```
 
-**`ReviewService.addReview()`** — calls the factory instead of building manually:
+**Called from `ReviewService.addReview()`:**
 ```java
 Review review = ReviewFactory.createReview(listingId, userId, rating, reviewText);
 reviewDao.insert(review);
 ```
 
-**Workflow when a user submits a review:**
-```
-User clicks "Submit Review"
-  → ReviewController.processAdd()
-    → ReviewService.addReview()
-      → ReviewFactory.createReview()   ← validation happens here
-        → new Review() assembled
-      → ReviewDao.insert(review)       ← saved to DB
-```
-
-### What your lecturer will ask
-- *"What is the difference between Factory and Builder?"* — Factory creates the whole object in one static call with validation. Builder is for when you want to set fields one at a time in a readable chain before calling `build()`. Factory = "give me one thing now". Builder = "let me put it together step by step".
+### Without it
+`ReviewService` would construct the `Review` object manually every time — and would have to repeat the validation logic there. If a second class ever needed to create a `Review`, it would copy-paste the same code, including the risk of missing the validation.
 
 ---
 
@@ -203,33 +153,14 @@ User clicks "Submit Review"
 **Category:** Creational
 
 ### What is it
-A helper object that lets you construct a complex object **field by field** in a readable chain, then get the final object with `build()`.
+A helper object that lets you construct a complex object field by field in a readable chain, then finalize it with `build()`.
 
-### The problem without it
-A `Listing` has 7 fields. Without Builder:
-```java
-new Listing(loginUser.getId(), title, description, city, address, price, propertyType);
-```
-Which argument is which? Easy to swap `price` and `userId` accidentally. The compiler won't catch it if both are the same type.
+**Real-world example:** Ordering a custom burger. You say: "I want a beef patty, add cheese, add lettuce, no onions." You specify each part one at a time instead of shouting one long sentence with every ingredient at once.
 
-### How it works in this project
+### What it does in this project
+When a user submits the Add Listing form, `ListingController` uses `ListingBuilder` to assemble the `Listing` object field by field. The `build()` method also automatically sets `status = "pending"` — the caller cannot forget this.
 
-**`ListingBuilder`** — each method sets one field and returns `this` (so you can chain):
-```java
-public ListingBuilder title(String title)   { this.title = title; return this; }
-public ListingBuilder price(Double price)   { this.price = price; return this; }
-// ... all 7 fields
-public Listing build() {
-    Listing listing = new Listing();
-    listing.setTitle(this.title);
-    listing.setPrice(this.price);
-    listing.setStatus("pending");   // always forced to pending — caller can't forget
-    ...
-    return listing;
-}
-```
-
-**`ListingController.processAdd()`** — uses the builder:
+### How it works
 ```java
 Listing listing = new ListingBuilder()
     .userId(loginUser.getId())
@@ -239,25 +170,16 @@ Listing listing = new ListingBuilder()
     .address(address)
     .price(price)
     .propertyType(propertyType)
+    .contactPhone(contactPhone)
+    .contactWechat(contactWechat)
+    .contactEmail(loginUser.getEmail())
     .build();
-listingService.addListing(listing);
 ```
 
-**Workflow when a user posts a new listing:**
-```
-User fills the "Add Listing" form → POST /listings/add
-  → ListingController.processAdd()
-    → new ListingBuilder()
-        .userId(...)
-        .title(...)
-        ...
-        .build()           ← status="pending" forced here
-    → ListingService.addListing(listing)
-      → ListingDao.insert(listing)   ← saved to DB, awaits admin approval
-```
+Each method sets one field and returns `this`, allowing the chain. `build()` assembles the final `Listing` object and forces `status = "pending"`.
 
-### What your lecturer will ask
-- *"Why not just use setters?"* — You can, but the builder chains them in one expression that reads like a sentence. It also lets `build()` enforce rules (like always setting `status = "pending"`) that plain setters can't enforce by themselves.
+### Without it
+The controller would call `new Listing(userId, title, description, city, address, price, propertyType, ...)` — a constructor with many parameters in a fixed order. Swapping two arguments of the same type (like `contactPhone` and `contactWechat`) would cause a silent bug the compiler cannot catch.
 
 ---
 
@@ -265,21 +187,14 @@ User fills the "Add Listing" form → POST /listings/add
 **Category:** Structural
 
 ### What is it
-A **single simple method** that hides many complex steps happening behind it. Like pressing one button on a remote instead of configuring each component separately.
+A single simple method that hides many complex steps happening behind it. The caller only sees one clean entry point.
 
-### The problem without it
-To show a listing detail page, you need data from 3 different places. Without Facade, the controller would do:
-```java
-Listing listing = listingDao.findById(id);
-List<Review> reviews = reviewDao.findByListingId(id);
-Double avg = reviewDao.getAverageRating(id);
-ListingDecorator decorated = new ListingDecorator(listing).withAverageRating(avg).withReviewCount(reviews.size());
-```
-That is 4 lines of database-layer logic sitting inside a controller — the wrong layer.
+**Real-world example:** A travel agent. You tell them "I want to go to Tokyo next month." They book the flight, reserve the hotel, and arrange the transfer — you make one call and get everything done. You don't deal with each airline and hotel separately.
 
-### How it works in this project
+### What it does in this project
+When a user opens a listing detail page, three separate things need to happen: fetch the listing, fetch all its reviews, and calculate the average rating. `ListingFacade.getListingDetail()` does all three in one method call and returns a ready-to-display object.
 
-**`ListingFacade.getListingDetail()`** — all 4 steps in one place:
+### How it works
 ```java
 public ListingDecorator getListingDetail(int listingId) {
     Listing listing      = listingDao.findById(listingId);
@@ -292,27 +207,10 @@ public ListingDecorator getListingDetail(int listingId) {
 }
 ```
 
-**`ListingController.detail()`** — one call, gets everything:
-```java
-ListingDecorator listing = listingService.getListingDetail(id);
-```
+`ListingController` calls `listingService.getListingDetail(id)` — one call — and gets everything it needs. It does not know that `ListingDao` and `ReviewDao` were involved.
 
-**Workflow when a user opens a listing detail page:**
-```
-User clicks on a listing → GET /listings/{id}
-  → ListingController.detail()
-    → ListingService.getListingDetail()
-      → ListingFacade.getListingDetail()   ← the facade
-          → ListingDao.findById()          ← call 1
-          → ReviewDao.findByListingId()    ← call 2
-          → ReviewDao.getAverageRating()   ← call 3
-          → new ListingDecorator(...)      ← call 4
-        ← returns one ready-to-display object
-    ← passed to Thymeleaf → listing/detail.html
-```
-
-### What your lecturer will ask
-- *"What subsystem does the Facade hide?"* — It hides the coordination between `ListingDao` and `ReviewDao`, and the construction of `ListingDecorator`. The controller only knows about the facade, not those three classes.
+### Without it
+The controller would have to call `listingDao`, then `reviewDao` twice, then construct the decorator itself — mixing database-layer logic into the controller, which is the wrong layer for it.
 
 ---
 
@@ -320,42 +218,47 @@ User clicks on a listing → GET /listings/{id}
 **Category:** Structural
 
 ### What is it
-A **wrapper** around an existing object that adds new data or behaviour without touching the original class.
+A wrapper around an existing object that adds new data or behaviour without modifying the original class.
 
-### The problem without it
-The `Listing` database table has no `average_rating` or `review_count` columns — these are calculated from the `review` table. You cannot store them in `Listing` because they would go stale the moment a new review is added. But the detail page needs to display them. Without Decorator, you'd either modify the entity class (mixing display concerns into the data model) or pass separate variables to every template.
+**Real-world example:** A plain coffee cup. You add a sleeve for heat protection and a lid for spill prevention. The cup itself is unchanged — the sleeve and lid are added on top of it. You can remove them without affecting the cup.
 
-### How it works in this project
+### What it does in this project
+The `Listing` database entity only has fields that exist in the database. `averageRating` and `reviewCount` are calculated from the `review` table — they are not stored in `listing`. `ListingDecorator` wraps a `Listing` and adds those two calculated fields for the detail page to display.
 
-**`ListingDecorator`** — wraps a `Listing` and adds two extra fields:
+### How it works
 ```java
 public class ListingDecorator {
-    private final Listing listing;      // the real object
+    private final Listing listing;
     private Double averageRating;
     private Integer reviewCount;
 
-    // Delegates everything to the wrapped object
-    public String getTitle()  { return listing.getTitle(); }
-    public Double getPrice()  { return listing.getPrice(); }
-    // ... all original fields
+    public ListingDecorator(Listing listing) { this.listing = listing; }
 
-    // New fields not in the DB
+    public ListingDecorator withAverageRating(Double avg) {
+        this.averageRating = avg;
+        return this;
+    }
+
+    public ListingDecorator withReviewCount(int count) {
+        this.reviewCount = count;
+        return this;
+    }
+
+    // Delegates original fields to the wrapped Listing
+    public String getTitle() { return listing.getTitle(); }
+    public Double getPrice() { return listing.getPrice(); }
+    // ... all other original getters
+
+    // New fields
     public Double  getAverageRating() { return averageRating; }
     public Integer getReviewCount()   { return reviewCount; }
 }
 ```
 
-**`ListingFacade`** attaches the extra data at request time:
-```java
-return new ListingDecorator(listing)
-        .withAverageRating(avgRating)
-        .withReviewCount(reviews.size());
-```
+The Thymeleaf template calls `listing.averageRating` and `listing.reviewCount` without knowing it is a decorator, not a plain `Listing`.
 
-**In `listing/detail.html`**, Thymeleaf calls `listing.averageRating` and `listing.reviewCount` — it doesn't know or care that `listing` is a Decorator, not a plain `Listing`.
-
-### What your lecturer will ask
-- *"Why not just add those fields directly to the `Listing` class?"* — Because `Listing` is the database entity. Adding display-only calculated fields to it mixes two concerns. The Decorator keeps the entity clean and adds display data only when it's needed.
+### Without it
+You would have to add `averageRating` and `reviewCount` directly to the `Listing` entity class — mixing calculated display fields into the database entity, which pollutes the data model.
 
 ---
 
@@ -363,71 +266,28 @@ return new ListingDecorator(listing)
 **Category:** Structural
 
 ### What is it
-A tree structure where **individual items (leaves) and groups of items (composites) share the same interface**. You can call the same method on one item or the whole group — the group automatically aggregates.
+A tree structure where individual items (leaves) and groups of items (composites) share the same interface. You can call the same method on one item or on the whole group — the group automatically computes the result from its children.
 
-### The problem without it
-A neighborhood has 4 rating categories: Safety, Transport, Food Access, Foreigner-Friendly. To show an overall score on the detail page you'd write:
-```java
-double overall = (safety + transport + foodAccess + foreignerFriendly) / 4.0;
+**Real-world example:** A company org chart. You can ask one employee "how many hours did you work?" or ask a department manager the same question — the manager automatically sums up all employees under them. Same question, different level of the tree.
+
+### What it does in this project
+A neighborhood has four rating categories: Safety, Transport, Food Access, and Foreigner-Friendly. Each is a leaf with its own score. The root composite holds all four and automatically calculates the Overall Liveability score as their average. The detail page calls `getScore()` on the root — it does not manually add up the four numbers.
+
+### How it works
 ```
-This formula is hardcoded to exactly 4 categories. If a 5th category is added tomorrow, you find and update every place this formula appears.
-
-### How it works in this project
-
-**The shared interface — `NeighborhoodScoreComponent`:**
-```java
-public interface NeighborhoodScoreComponent {
-    String getName();
-    double getScore();
-}
-```
-Both the leaf and the composite implement this. You can call `getScore()` on either.
-
-**The leaf — `NeighborhoodScoreLeaf`:**
-Holds one category score. `getScore()` just returns the stored value.
-```java
-new NeighborhoodScoreLeaf("Safety", 4.2)       // getScore() → 4.2
-new NeighborhoodScoreLeaf("Transport", 3.8)    // getScore() → 3.8
+NeighborhoodScoreComposite ("Overall Liveability")  ← root, getScore() = average of children
+├── NeighborhoodScoreLeaf ("Safety",             4.2)
+├── NeighborhoodScoreLeaf ("Transport",          3.8)
+├── NeighborhoodScoreLeaf ("Food Access",        4.5)
+└── NeighborhoodScoreLeaf ("Foreigner-Friendly", 4.0)
 ```
 
-**The composite — `NeighborhoodScoreComposite`:**
-Holds a list of children. `getScore()` averages all children.
-```java
-public double getScore() {
-    double sum = 0;
-    for (NeighborhoodScoreComponent child : children) sum += child.getScore();
-    return Math.round((sum / children.size()) * 10.0) / 10.0;
-}
-```
+`NeighborhoodService.buildScoreTree()` builds this tree and passes it to the template. The composite's `getScore()` loops through its children and returns the average automatically.
 
-**`NeighborhoodService.buildScoreTree()`** — builds the tree for a neighborhood:
-```java
-NeighborhoodScoreComposite root = new NeighborhoodScoreComposite("Overall Liveability");
-root.add(new NeighborhoodScoreLeaf("Safety",             n.getAvgSafety()));
-root.add(new NeighborhoodScoreLeaf("Transport",          n.getAvgTransport()));
-root.add(new NeighborhoodScoreLeaf("Food Access",        n.getAvgFoodAccess()));
-root.add(new NeighborhoodScoreLeaf("Foreigner-Friendly", n.getAvgForeignerFriendly()));
-// root.getScore() → average of the 4 leaves
-```
+Both `NeighborhoodScoreLeaf` and `NeighborhoodScoreComposite` implement the same `NeighborhoodScoreComponent` interface with `getName()` and `getScore()`. The template does not need to know which type it is calling.
 
-**Workflow when a user views a neighborhood detail page:**
-```
-User opens 鼓楼区 → GET /neighborhoods/1
-  → NeighborhoodController.detail()
-    → NeighborhoodService.buildScoreTree(neighborhood)
-        → creates NeighborhoodScoreComposite (root)
-        → adds 4 NeighborhoodScoreLeaf children
-    → model.addAttribute("scoreTree", root)
-  → neighborhood/detail.html
-      Safety:              4.2 / 5
-      Transport:           3.8 / 5
-      Food Access:         4.5 / 5
-      Foreigner-Friendly:  4.0 / 5
-      Overall Liveability: 4.1 / 5   ← root.getScore() called by Thymeleaf
-```
-
-### What your lecturer will ask
-- *"What is the difference between a leaf and a composite?"* — A leaf has no children and just holds its own value. A composite holds children and its `getScore()` is computed from them. Both look the same from the outside because they share the same interface.
+### Without it
+The service would calculate the overall score manually: `(safety + transport + foodAccess + foreignerFriendly) / 4.0`. This formula is hardcoded to exactly four categories. Adding a fifth category in the future would require updating every place the formula appears.
 
 ---
 
@@ -435,70 +295,29 @@ User opens 鼓楼区 → GET /neighborhoods/1
 **Category:** Behavioral
 
 ### What is it
-A **publish-subscribe system**. One object (the publisher) fires an event. Any number of observers are subscribed and react to it automatically — the publisher does not know who they are or what they do.
+A publish-subscribe system. One object fires an event. Any number of observers are subscribed and react to it automatically — the publisher does not know who they are or what they do.
 
-### The problem without it
-When the admin approves a listing, two things need to happen: log the event, and update the pending count. Without Observer, `AdminController.approveListing()` would call the logger and update the counter directly:
+**Real-world example:** A YouTube channel. When the channel uploads a new video, all subscribers get notified automatically. The channel does not call each subscriber individually — it just publishes, and everyone who subscribed reacts.
+
+### What it does in this project
+When an admin approves a listing, two things need to happen: log the event to the console, and update the cached pending listing count. Instead of `AdminController` calling the logger and counter directly, it fires an event through `ListingEventPublisher` and both observers react independently.
+
+### How it works
+**Publisher — `ListingEventPublisher`:**
 ```java
-listingDao.updateStatus(id, "approved");
-logger.log("Approved listing " + id);          // now tightly coupled
-counter.decrement();                            // now tightly coupled
-```
-Every new side-effect (e.g., send an email) means editing `AdminController` again.
-
-### How it works in this project
-
-**The observer interface — `ListingObserver`:**
-```java
-public interface ListingObserver {
-    void onListingApproved(int listingId);
-    void onListingDeleted(int listingId);
-}
-```
-
-**The publisher — `ListingEventPublisher`:**
-```java
-private final List<ListingObserver> observers = new ArrayList<>();
-
-public void register(ListingObserver observer) { observers.add(observer); }
-
 public void publishApproved(int listingId) {
     for (ListingObserver o : observers) o.onListingApproved(listingId);
 }
 ```
 
-**Observer 1 — `ListingApprovalLogger`:** implements `ListingObserver`, prints to console.
+**Observer 1 — `ListingApprovalLogger`:** prints an audit log line to the console.
 
-**Observer 2 — `PendingListingCounter`:** implements `ListingObserver`, maintains a cached count.
-- First access: loads count from DB once.
-- `onListingApproved()`: decrements the cached count by 1 (no DB query needed).
-- `onListingDeleted()`: resets to -1 (forces a fresh DB load next time, since the deleted listing may have been pending).
+**Observer 2 — `PendingListingCounter`:** decrements its cached pending count by 1 (no database query needed).
 
-**Registration in `AdminController`** — happens once at startup via `@PostConstruct`:
-```java
-@PostConstruct
-public void registerObservers() {
-    listingEventPublisher.register(listingApprovalLogger);
-    listingEventPublisher.register(pendingListingCounter);
-}
-```
+All three observers are registered once at startup in `AdminController` via `@PostConstruct`. When the admin approves a listing, `AdminController` calls `listingEventPublisher.publishApproved(id)` — one line — and both observers react automatically.
 
-**Workflow when admin approves a listing:**
-```
-Admin clicks "Approve" → POST /admin/listings/approve/3
-  → AdminController.approveListing(3)
-    → commandHistory.executeCommand(new ApproveListingCommand(...))
-      → listingDao.updateStatus(3, "approved")   ← DB updated
-    → listingEventPublisher.publishApproved(3)
-        → listingApprovalLogger.onListingApproved(3)
-            → prints: "[LOG] Listing #3 was APPROVED by admin."
-        → pendingListingCounter.onListingApproved(3)
-            → pendingCount--
-  → redirect to /admin/listings
-```
-
-### What your lecturer will ask
-- *"Why use Observer instead of just calling those methods directly?"* — Because the publisher (`AdminController`) should not know about the logger or the counter. With Observer, you can add a third observer (e.g., email notification) by registering one new class — no changes to `AdminController`.
+### Without it
+`AdminController` would call the logger and update the counter directly after every approval — tightly coupling the controller to those two classes. Adding a third side-effect (like sending an email notification) would require editing `AdminController` again.
 
 ---
 
@@ -506,92 +325,34 @@ Admin clicks "Approve" → POST /admin/listings/approve/3
 **Category:** Behavioral
 
 ### What is it
-Each action is wrapped as an **object** with `execute()` and `undo()`. A history stack stores these objects. To undo, pop the last one and call `undo()`.
+Each action is wrapped as an object with `execute()` and `undo()`. A history stack stores these objects so any action can be reversed by calling `undo()` on the most recent one.
 
-### The problem without it
-When the admin approves a listing, `listingDao.updateStatus(id, "approved")` is called directly. There is no record that this action happened, no way to reverse it. If the admin approves the wrong listing, they need to go into the database manually.
+**Real-world example:** Ctrl+Z in any text editor. Every action you perform is stored as an object. Pressing Ctrl+Z pops the last action and reverses it. The editor does not need to know what kind of action it was — it just calls undo on whatever is on top.
 
-### How it works in this project
+### What it does in this project
+When an admin approves a listing or deactivates a user, the action is wrapped in a command object and passed to `CommandHistory`, which executes it and pushes it onto a stack. If the admin made a mistake, they click "Undo Last Action" on the dashboard — `CommandHistory` pops the last command and calls `undo()` on it, reversing the action without any manual database work.
 
-**The interface — `AdminCommand`:**
+### How it works
 ```java
-public interface AdminCommand {
-    void execute();
-    void undo();
-    String getDescription();
-}
-```
-
-**Concrete command 1 — `ApproveListingCommand`:**
-```java
-public void execute() { listingDao.updateStatus(listingId, "approved"); }
-public void undo()    { listingDao.updateStatus(listingId, "pending");  }
-```
-
-**Concrete command 2 — `DeactivateUserCommand`:**
-```java
-public void execute() { userDao.updateRole(userId, "deactivated"); }
-public void undo()    { userDao.updateRole(userId, "user");        }
-```
-
-**The invoker — `CommandHistory`:**
-```java
-private final Deque<AdminCommand> history = new ArrayDeque<>();
-
-public void executeCommand(AdminCommand command) {
-    command.execute();   // run the action
-    history.push(command);  // remember it
-}
-
-public String undoLast() {
-    AdminCommand last = history.pop();
-    last.undo();             // reverse the action
-    return last.getDescription();
-}
-```
-
-**`AdminController`** uses `CommandHistory` for reversible actions:
-```java
-// Approve
+// Approve a listing
 commandHistory.executeCommand(new ApproveListingCommand(listingDao, id));
 
-// Deactivate user
+// Deactivate a user
 commandHistory.executeCommand(new DeactivateUserCommand(userDao, id));
 
-// Undo (new endpoint: POST /admin/undo)
-@PostMapping("/undo")
-public String undo(HttpSession session) {
-    commandHistory.undoLast();
-    return "redirect:/admin/dashboard";
-}
+// Undo the last action
+commandHistory.undoLast();
 ```
 
-**The admin dashboard** shows the last action and an Undo button:
-```html
-<p>Last action: <strong th:text="${lastAction}"></strong></p>
-<form th:action="@{/admin/undo}" method="post">
-    <button type="submit">Undo Last Action</button>
-</form>
-```
+`CommandHistory` uses a `Deque<AdminCommand>` as a stack (LIFO). `push()` adds commands after execution, `pop()` removes the most recent one for undo.
 
-**Workflow — admin approves then undoes:** 
-```
-Admin clicks "Approve" on listing #3
-  → commandHistory.executeCommand(new ApproveListingCommand(listingDao, 3))
-      → listingDao.updateStatus(3, "approved")   ← DB: status = approved
-      → history stack: [ApproveListingCommand(3)]
+`ApproveListingCommand.execute()` sets status to `"approved"`. Its `undo()` sets it back to `"pending"`.
+`DeactivateUserCommand.execute()` sets role to `"deactivated"`. Its `undo()` sets it back to `"user"`.
 
-Admin realises it was wrong, clicks "Undo Last Action"
-  → POST /admin/undo
-    → commandHistory.undoLast()
-        → ApproveListingCommand.undo()
-          → listingDao.updateStatus(3, "pending")  ← DB: status = pending again
-      → history stack: []  (empty)
-```
+`CommandHistory` never knows which type of command it is running — it only calls `execute()` and `undo()` through the `AdminCommand` interface.
 
-### What your lecturer will ask
-- *"What is the history stack data structure?"* — `ArrayDeque<AdminCommand>`. `push()` adds to the top, `pop()` removes from the top — LIFO (Last In, First Out), so the most recent action is always undone first.
-- *"Why does `CommandHistory` not know what kind of command it is running?"* — Because it only calls `execute()` and `undo()` through the `AdminCommand` interface. It doesn't care if it's approving a listing or deactivating a user — the polymorphism handles it.
+### Without it
+`listingDao.updateStatus(id, "approved")` would be called directly with no record of it happening and no way to reverse it. If the admin approved a fraudulent listing by mistake, they would need to fix it manually in the database.
 
 ---
 
@@ -599,80 +360,40 @@ Admin realises it was wrong, clicks "Undo Last Action"
 **Category:** Behavioral
 
 ### What is it
-A family of algorithms (strategies) behind a shared interface. You pick which algorithm to use at runtime. The code that uses them doesn't change — only which strategy is selected.
+A family of algorithms behind a shared interface. You choose which algorithm to use at runtime. The calling code never changes — only the selected strategy does.
 
-### The problem without it
-The listings browse page filters results. Without Strategy:
-```java
-if (city != null) {
-    // filter by city
-} else if (minPrice != null || maxPrice != null) {
-    // filter by price
-} else if (propertyType != null) {
-    // filter by type
-}
-```
-Every new filter type adds another `else if`. The controller grows and the filter logic is stuck inside it permanently.
+**Real-world example:** A navigation app like Google Maps. You choose "driving," "walking," or "transit" — the app calculates the route using a different algorithm each time, but you always interact with the same "Get Directions" button.
 
-### How it works in this project
+### What it does in this project
+The listings browse page lets users filter by city, price range, or property type. Each filter is a separate strategy that implements the same `ListingFilterStrategy` interface. `ListingService` checks which filters the user provided and applies the matching strategies in sequence.
 
-**The interface — `ListingFilterStrategy`:**
+### How it works
+**The interface:**
 ```java
 public interface ListingFilterStrategy {
     List<Listing> filter(List<Listing> listings);
 }
 ```
 
-**Three concrete strategies:**
-
-`CityFilterStrategy` — keeps only listings where `city` matches:
+**Runtime selection in `ListingService`:**
 ```java
-return listings.stream()
-    .filter(l -> l.getCity().equalsIgnoreCase(city))
-    .collect(Collectors.toList());
+if (city != null)
+    strategy = new CityFilterStrategy(city);
+    all = strategy.filter(all);
+
+if (minPrice != null || maxPrice != null)
+    strategy = new PriceRangeFilterStrategy(minPrice, maxPrice);
+    all = strategy.filter(all);
+
+if (propertyType != null)
+    strategy = new PropertyTypeFilterStrategy(propertyType);
+    all = strategy.filter(all);
 ```
 
-`PriceRangeFilterStrategy` — keeps listings between `minPrice` and `maxPrice`:
-```java
-return listings.stream()
-    .filter(l -> (minPrice == null || l.getPrice() >= minPrice)
-              && (maxPrice == null || l.getPrice() <= maxPrice))
-    .collect(Collectors.toList());
-```
+Each strategy uses Java streams to filter the list. For example, `PriceRangeFilterStrategy` keeps only listings whose price falls within the given range, skipping null bounds if the user left one side empty.
 
-`PropertyTypeFilterStrategy` — keeps only listings matching the type (studio, apartment, shared):
-```java
-return listings.stream()
-    .filter(l -> l.getPropertyType().equalsIgnoreCase(propertyType))
-    .collect(Collectors.toList());
-```
-
-**`ListingService`** applies whichever strategies are relevant:
-```java
-List<ListingFilterStrategy> strategies = new ArrayList<>();
-if (city != null)         strategies.add(new CityFilterStrategy(city));
-if (minPrice != null || maxPrice != null) strategies.add(new PriceRangeFilterStrategy(minPrice, maxPrice));
-if (propertyType != null) strategies.add(new PropertyTypeFilterStrategy(propertyType));
-
-for (ListingFilterStrategy strategy : strategies) {
-    listings = strategy.filter(listings);
-}
-```
-
-**Workflow when a user searches listings:**
-```
-User sets filter: city = "Nanjing", propertyType = "studio"
-  → GET /listings?city=Nanjing&propertyType=studio
-    → ListingController.list()
-      → ListingService.getApprovedListings(city, null, null, propertyType, page, pageSize)
-          → CityFilterStrategy("Nanjing").filter(listings)       ← removes non-Nanjing
-          → PropertyTypeFilterStrategy("studio").filter(listings) ← keeps only studios
-        ← returns filtered, paginated list
-    → model: listings = [Cozy Studio near Nanjing University]
-```
-
-### What your lecturer will ask
-- *"Can multiple strategies apply at the same time?"* — Yes. The service builds a list of all applicable strategies and applies them in sequence. City filter runs first, then price filter, then type filter.
+### Without it
+All filter logic would live as `if/else` blocks directly inside `ListingService`, mixed together in one large method. Adding a new filter type (for example, filter by number of rooms) would require editing the service method and adding another `else if` block.
 
 ---
 
@@ -680,33 +401,28 @@ User sets filter: city = "Nanjing", propertyType = "studio"
 **Category:** Behavioral
 
 ### What is it
-A base class defines the **skeleton of an operation** — the steps are fixed. Specific steps are left as `abstract` methods for subclasses to fill in. The structure never changes; only the varying parts are overridden.
+A base class defines the fixed steps of an operation as a skeleton. The specific details of each step are left as abstract methods for subclasses to fill in. The structure never changes — only the varying parts are overridden.
 
-### The problem without it
-Every DAO that fetches all rows does the same thing: build SQL, run query, map each row. Without Template Method, `UserDao`, `ListingDao`, and `ReviewDao` would all have nearly identical `findAll()` code with only the SQL string and row-mapper lambda different. Any bug in the fetch pattern is fixed three times.
+**Real-world example:** A recipe card that says "1. Prepare ingredients. 2. Cook. 3. Plate." The steps are always the same, but what you cook and how you plate it depends on the dish. The recipe gives the structure; the chef fills in the specifics.
 
-### How it works in this project
+### What it does in this project
+`BaseDao` defines the fixed skeleton for fetching all records from the database: get the SQL, run the query, map each row to a Java object. `UserDao` extends `BaseDao` and only provides the SQL string and the row mapping. It inherits `findAll()` without writing the `jdbcTemplate.query()` call itself.
 
-**`BaseDao<T>`** — defines the skeleton:
+### How it works
 ```java
-public abstract class BaseDao<T> {
-
-    protected final JdbcTemplate jdbcTemplate;
-
-    // Template method — fixed structure, two steps delegated to subclass
-    public List<T> findAll() {
-        String sql = getQuery();                               // step 1: subclass provides SQL
-        return jdbcTemplate.query(sql,                         // step 2: run the query
-            (rs, rowNum) -> mapResult(rs));                   // step 3: subclass provides mapping
-    }
-
-    protected abstract String getQuery();                      // subclass fills in
-    protected abstract T mapResult(ResultSet rs) throws SQLException;  // subclass fills in
+// BaseDao.java — defines the skeleton
+public List<T> findAll() {
+    String sql = getQuery();                             // step 1: subclass provides SQL
+    return jdbcTemplate.query(sql,
+        (rs, rowNum) -> mapResult(rs));                  // step 2: run query, subclass maps each row
 }
+
+protected abstract String getQuery();
+protected abstract T mapResult(ResultSet rs) throws SQLException;
 ```
 
-**`UserDao extends BaseDao<User>`** — only provides the two varying parts:
 ```java
+// UserDao.java — fills in the two blanks
 @Override
 protected String getQuery() {
     return "SELECT * FROM user ORDER BY created_at DESC";
@@ -721,47 +437,34 @@ protected User mapResult(ResultSet rs) throws SQLException {
     return u;
 }
 ```
-`UserDao` gets `findAll()` for free. It never writes the `jdbcTemplate.query()` call itself.
 
-**Workflow when admin opens the Users page:**
-```
-Admin opens /admin/users
-  → AdminController.users()
-    → UserDao.findAll()          ← inherited from BaseDao, not defined in UserDao
-        → getQuery()             ← UserDao: "SELECT * FROM user ORDER BY created_at DESC"
-        → jdbcTemplate.query()   ← BaseDao runs the query
-        → mapResult(rs)          ← UserDao: maps each row to a User object
-      ← returns List<User>
-  → admin/users.html rendered
-```
+`AdminController` calls `userDao.findAll()` — it runs `BaseDao`'s algorithm using `UserDao`'s SQL and mapping. `UserDao` never writes the query-execution logic itself.
 
-### What your lecturer will ask
-- *"Which class defines `findAll()` and which class uses it?"* — `BaseDao` defines it. `UserDao` inherits it and uses it without writing it.
-- *"What are the abstract methods and why are they abstract?"* — `getQuery()` and `mapResult()`. They are abstract because the SQL and the row mapping are different for every table — only the concrete DAO knows them. `BaseDao` cannot know them in advance.
-- *"Is this the same as inheritance?"* — It uses inheritance, but the pattern is specifically about the algorithm skeleton. The key idea is the **inversion of control**: the base class calls the subclass methods (`getQuery`, `mapResult`), not the other way around.
+### Without it
+Every DAO would write its own `jdbcTemplate.query(...)` call with its own row-mapping logic inline. If that pattern ever needed to change — for example, adding logging around every query — it would need to be updated in every DAO separately.
 
 ---
 
 ## Summary: The 3 Categories
 
-### Creational (how objects are created)
+### Creational — how objects are created
 | Pattern | Simple summary |
 |---|---|
 | Singleton | Only one instance ever. `DatabaseManager.getInstance()` always returns the same database connection wrapper. |
-| Factory | One static method creates and validates the object. `ReviewFactory.createReview()`. |
-| Builder | Build step by step with a readable chain. `new ListingBuilder().title(...).price(...).build()`. |
+| Factory | One static method creates and validates the object. `ReviewFactory.createReview()` ensures every review is valid before it exists. |
+| Builder | Build step by step with a readable chain. `new ListingBuilder().title(...).price(...).build()` — readable, safe, enforces defaults. |
 
-### Structural (how objects are connected)
+### Structural — how objects are connected
 | Pattern | Simple summary |
 |---|---|
-| Facade | One method hides many behind it. `ListingFacade.getListingDetail()` = 3 DAO calls + decorator. |
-| Decorator | Wrap an object and add extra data. `ListingDecorator` adds `averageRating` to a plain `Listing`. |
-| Composite | Tree where leaves and groups share one interface. Leaf = one score. Root = average of all leaves. |
+| Facade | One method hides many behind it. `ListingFacade.getListingDetail()` = 2 DAOs + decorator in one call. |
+| Decorator | Wrap an object and add extra data. `ListingDecorator` adds `averageRating` and `reviewCount` to a plain `Listing`. |
+| Composite | Tree where leaves and groups share one interface. Leaf = one score. Root = average of all leaves, computed automatically. |
 
-### Behavioral (how objects communicate)
+### Behavioral — how objects communicate
 | Pattern | Simple summary |
 |---|---|
-| Observer | Publisher fires event, observers react. Approval → logger logs, counter decrements. |
-| Command | Action = object. Execute stores it. Undo reverses it. Admin dashboard has "Undo Last Action". |
-| Strategy | Swap algorithms at runtime. Same filter method, different rule applied based on user input. |
-| Template Method | Base class defines the steps. Subclass fills in the specifics. `BaseDao.findAll()` = fixed skeleton. |
+| Observer | Publisher fires event, observers react. Approval → logger logs, counter decrements — controller does not call them directly. |
+| Command | Action = object. Execute stores it on a stack. Undo reverses it. Admin dashboard has a working "Undo Last Action" button. |
+| Strategy | Swap algorithms at runtime. Same `filter()` call, different rule applied depending on what the user searched for. |
+| Template Method | Base class defines the steps. Subclass fills in the specifics. `BaseDao.findAll()` = fixed skeleton, `UserDao` fills in SQL and mapping. |
