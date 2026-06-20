@@ -10,7 +10,6 @@ import java.util.List;
 
 @Repository
 public class ListingDao {
-
     private final JdbcTemplate jdbcTemplate;
 
     public ListingDao(DatabaseManager databaseManager) {

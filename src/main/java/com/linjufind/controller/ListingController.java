@@ -93,6 +93,7 @@ public class ListingController {
                              HttpSession session) {
 
         User loginUser = (User) session.getAttribute("loginUser");
+        System.out.println("[processAdd] New listing submitted: \"" + title + "\" by user " + loginUser.getUsername());
 
         // Builder Pattern implementation
         Listing listing = new ListingBuilder()

@@ -17,7 +17,6 @@ import javax.sql.DataSource;
 */
 
 public class DatabaseManager {
-
     private static DatabaseManager instance;
     private JdbcTemplate connection;
 

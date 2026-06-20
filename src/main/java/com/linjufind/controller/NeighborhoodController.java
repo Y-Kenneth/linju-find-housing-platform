@@ -39,7 +39,7 @@ public class NeighborhoodController {
         User loginUser = (User) session.getAttribute("loginUser");
         NeighborhoodRating userRating = neighborhoodService.getUserRating(id, loginUser.getId());
 
-        // DESIGN PATTERN: Composite — score tree computes overall liveability from individual category scores
+        // Composite Pattern Implementation — score tree computes overall liveability from individual category scores
         NeighborhoodScoreComposite scoreTree = neighborhoodService.buildScoreTree(neighborhood);
 
         model.addAttribute("neighborhood", neighborhood);

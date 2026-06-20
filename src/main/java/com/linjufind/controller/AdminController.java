@@ -74,7 +74,7 @@ public class AdminController {
         long totalListings = listingDao.findAll().size();
         long totalReviews  = reviewDao.findAll().size();
 
-        // DESIGN PATTERN: Observer — pending count from PendingListingCounter cache
+        // Observer Pattern Implementation — pending count from PendingListingCounter cache
         long pendingListings = pendingListingCounter.getPendingCount();
 
         model.addAttribute("totalUsers", totalUsers);
@@ -103,7 +103,7 @@ public class AdminController {
         // Command Pattern Implementation — execute via history so it can be undone
         commandHistory.executeCommand(new ApproveListingCommand(listingDao, id));
 
-        // DESIGN PATTERN: Observer — notify all observers that a listing was approved
+        // Observer Pattern Implementation — notify all observers that a listing was approved
         listingEventPublisher.publishApproved(id);
         return "redirect:/admin/listings";
     }
@@ -112,7 +112,7 @@ public class AdminController {
     public String deleteListing(@PathVariable int id, HttpSession session) {
         if (!isAdmin(session)) return "redirect:/listings";
         listingDao.delete(id);
-        // DESIGN PATTERN: Observer — notify all observers that a listing was deleted
+        // Observer Pattern Implementation — notify all observers that a listing was deleted
         listingEventPublisher.publishDeleted(id);
         return "redirect:/admin/listings";
     }

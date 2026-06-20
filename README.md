@@ -27,7 +27,7 @@ For the full project background and motivation, see [Documents/LinjuFind_Project
 | Controller | Spring MVC |
 | Service | Java Service Layer |
 | DAO | Spring JDBC (`JdbcTemplate`) |
-| Database | MySQL 8.0 |
+| Database | MariaDB 10.4.28 |
 | Session | `HttpSession` (manual — no Spring Security) |
 | Cookie | `Cookie` class (Remember Me) |
 | Filter | `jakarta.servlet.Filter` + `FilterRegistrationBean` |

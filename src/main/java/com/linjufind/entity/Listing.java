@@ -3,7 +3,6 @@ package com.linjufind.entity;
 import java.util.Date;
 
 public class Listing {
-
     private Integer id;
     private Integer userId;
     private String title;
