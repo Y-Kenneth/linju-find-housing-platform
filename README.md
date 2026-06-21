@@ -98,8 +98,6 @@ linju-find-housing-platform/
 │       ├── neighborhood/               ← list.html, detail.html
 │       ├── admin/                      ← dashboard.html, listings.html, reviews.html, users.html
 │       └── fragments/
-├── db/
-│   └── migration_add_listing_contact.sql
 ├── Documents/
 │   ├── LinjuFind_Project_Background.md
 │   └── LinjuFind_DesignPatterns.md
@@ -213,10 +211,7 @@ spring.thymeleaf.cache=false
 
 **2. Create the database**
 
-Run the SQL above in MySQL (or SQLYog), then run the contact migration:
-```
-db/migration_add_listing_contact.sql
-```
+Run the SQL above in MySQL (or SQLYog).
 
 **3. Run**
 
