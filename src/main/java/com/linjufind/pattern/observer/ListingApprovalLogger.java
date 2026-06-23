@@ -11,12 +11,10 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class ListingApprovalLogger implements ListingObserver {
-
     @Override
     public void onListingApproved(int listingId) {
         System.out.println("[ListingApprovalLogger] Listing #" + listingId + " was APPROVED by admin.");
     }
-
     @Override
     public void onListingDeleted(int listingId) {
         System.out.println("[ListingApprovalLogger] Listing #" + listingId + " was DELETED by admin.");

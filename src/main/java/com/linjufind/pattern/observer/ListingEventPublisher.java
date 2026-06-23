@@ -21,19 +21,15 @@ import java.util.List;
 
 @Component
 public class ListingEventPublisher {
-
     private final List<ListingObserver> observers = new ArrayList<>();
-
     public void register(ListingObserver observer) {
         observers.add(observer);
     }
-
     public void publishApproved(int listingId) {
         for (ListingObserver observer : observers) {
             observer.onListingApproved(listingId);
         }
     }
-
     public void publishDeleted(int listingId) {
         for (ListingObserver observer : observers) {
             observer.onListingDeleted(listingId);

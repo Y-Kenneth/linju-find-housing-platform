@@ -30,13 +30,13 @@ import java.util.Map;
 @Controller
 public class AuthController {
 
-    /** How many listings feed the login-page marquee (it loops, so we want a healthy spread). */
+    /** How many listings feed the login-page marquee */
     private static final int SHOWCASE_LIMIT = 12;
     private static final int SNIPPET_MAX_CHARS = 120;
 
     /** Remember Me cookie name + how many distinct usernames we keep in the dropdown. */
     private static final String REMEMBER_COOKIE = "rememberedUsers";
-    private static final int MAX_REMEMBERED = 5;
+    private static final int MAX_REMEMBERED = 10;
 
     /**
      * Builds an ordered name → Hanzi map for the given cities (keyed exactly as the

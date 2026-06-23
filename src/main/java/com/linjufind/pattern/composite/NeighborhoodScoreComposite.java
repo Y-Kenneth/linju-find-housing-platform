@@ -20,18 +20,15 @@ import java.util.List;
 */
 
 public class NeighborhoodScoreComposite implements NeighborhoodScoreComponent {
-
     private final String name;
     private final List<NeighborhoodScoreComponent> children = new ArrayList<>();
 
     public NeighborhoodScoreComposite(String name) {
         this.name = name;
     }
-
     public void add(NeighborhoodScoreComponent component) {
         children.add(component);
     }
-
     @Override
     public String getName() { return name; }
 

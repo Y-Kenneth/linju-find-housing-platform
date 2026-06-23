@@ -36,11 +36,9 @@ public class DatabaseManager {
     public static synchronized DatabaseManager getInstance() {
         return instance;
     }
-
     private void setupDatabaseConnection(DataSource dataSource) {
         this.connection = new JdbcTemplate(dataSource);
     }
-
     public JdbcTemplate getConnection() {
         return connection;
     }

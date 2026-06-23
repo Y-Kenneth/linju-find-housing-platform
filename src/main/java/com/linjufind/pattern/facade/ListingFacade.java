@@ -20,7 +20,6 @@ import java.util.List;
 
 @Component
 public class ListingFacade {
-
     private final ListingDao listingDao;
     private final ReviewDao reviewDao;
 

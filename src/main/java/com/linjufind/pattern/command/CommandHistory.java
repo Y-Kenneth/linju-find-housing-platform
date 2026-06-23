@@ -17,14 +17,12 @@ import java.util.Deque;
 
 @Component
 public class CommandHistory {
-
     private final Deque<AdminCommand> history = new ArrayDeque<>();
 
     public void executeCommand(AdminCommand command) {
         command.execute();
         history.push(command);
     }
-
     public String undoLast() {
         if (history.isEmpty()) {
             return null; // nothing to undo
@@ -37,7 +35,6 @@ public class CommandHistory {
     public boolean hasHistory() {
         return !history.isEmpty();
     }
-
     public String peekLastDescription() {
         return history.isEmpty() ? null : history.peek().getDescription();
     }

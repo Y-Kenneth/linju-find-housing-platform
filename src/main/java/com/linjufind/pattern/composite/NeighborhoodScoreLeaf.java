@@ -8,7 +8,6 @@ package com.linjufind.pattern.composite;
 */
 
 public class NeighborhoodScoreLeaf implements NeighborhoodScoreComponent {
-
     private final String name;
     private final double score;
 
@@ -16,10 +15,8 @@ public class NeighborhoodScoreLeaf implements NeighborhoodScoreComponent {
         this.name  = name;
         this.score = score;
     }
-
     @Override
     public String getName() { return name; }
-
     @Override
     public double getScore() { return score; }
 }

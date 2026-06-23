@@ -15,7 +15,6 @@ import java.util.Date;
 */
 
 public class ListingDecorator {
-
     private final Listing listing;
     private Double averageRating;
     private Integer reviewCount;
@@ -23,17 +22,14 @@ public class ListingDecorator {
     public ListingDecorator(Listing listing) {
         this.listing = listing;
     }
-
     public ListingDecorator withAverageRating(Double averageRating) {
         this.averageRating = averageRating;
         return this;
     }
-
     public ListingDecorator withReviewCount(Integer reviewCount) {
         this.reviewCount = reviewCount;
         return this;
     }
-
     // Delegates all original Listing fields
     public Integer getId()           { return listing.getId(); }
     public Integer getUserId()       { return listing.getUserId(); }

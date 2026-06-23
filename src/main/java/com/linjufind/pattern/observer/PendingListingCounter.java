@@ -16,14 +16,12 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class PendingListingCounter implements ListingObserver {
-
     private final ListingDao listingDao;
     private int pendingCount = -1; // -1 means not yet initialised
 
     public PendingListingCounter(ListingDao listingDao) {
         this.listingDao = listingDao;
     }
-
     public int getPendingCount() {
         if (pendingCount == -1) {
             pendingCount = (int) listingDao.findAll().stream()
@@ -32,12 +30,10 @@ public class PendingListingCounter implements ListingObserver {
         }
         return pendingCount;
     }
-
     @Override
     public void onListingApproved(int listingId) {
         if (pendingCount > 0) pendingCount--;
     }
-
     @Override
     public void onListingDeleted(int listingId) {
         // when a listing is deleted, the class cannot be sure whether that listing was pending 

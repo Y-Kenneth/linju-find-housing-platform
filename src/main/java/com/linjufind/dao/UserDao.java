@@ -19,7 +19,6 @@ public class UserDao extends BaseDao<User> {
     }
 
     // --- Template Method hooks ---
-
     @Override
     protected String getQuery() {
         return "SELECT * FROM user ORDER BY created_at DESC";

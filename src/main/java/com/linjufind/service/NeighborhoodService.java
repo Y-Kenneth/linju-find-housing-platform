@@ -19,8 +19,7 @@ public class NeighborhoodService {
         this.neighborhoodDao = neighborhoodDao;
     }
 
-    // DESIGN PATTERN: Composite — build    s a score tree for one neighborhood
-    // The root composite computes overall liveability as the average of all leaf scores.
+    // Composite Pattern Implementation — builds a score tree for one neighborhood
     public NeighborhoodScoreComposite buildScoreTree(Neighborhood n) {
         NeighborhoodScoreComposite root = new NeighborhoodScoreComposite("Overall Liveability");
 
